@@ -124,7 +124,7 @@ export function computeDashboardSummary(params: {
 
     const employeeName = shift.employee_id ? employeeLookup.get(shift.employee_id)?.name ?? 'Employee' : 'Unassigned'
     const baseInfo = {
-      id: shift.id,
+      id: shift.id ?? crypto.randomUUID(),
       locationId: loc.id,
       locationName: loc.name,
       employeeName,

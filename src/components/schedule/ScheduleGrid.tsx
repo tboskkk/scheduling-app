@@ -139,6 +139,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
     toggleShiftSelection,
     clearSelection,
     clipboardShifts,
+    setClipboardShifts,
     validationErrors,
     schedule,
     setSchedule,
@@ -246,7 +247,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
 
     const { data: prevShifts, error } = await supabase
       .from('shifts')
-      .select('location_id, employee_id, role_id, start_datetime, end_datetime, break_start_datetime, break_end_datetime')
+      .select('id, schedule_id, location_id, employee_id, role_id, start_datetime, end_datetime, break_start_datetime, break_end_datetime')
       .eq('location_id', locationId)
       .gte('start_datetime', prevQueryStartIso)
       .lt('start_datetime', prevQueryEndIso)
@@ -645,7 +646,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
     return { ...shift, employee_id: targetEmployeeId, start_datetime: startIso, end_datetime: endIso }
   }
 
-  const handleDragStart = (event: DragStartEvent) => {
+  const handleDragStart = (_event: DragStartEvent) => {
     // No-op for now
   }
 
@@ -746,7 +747,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
   const handleShiftClick = (shift: ShiftRecord, e: React.MouseEvent) => {
     e.stopPropagation()
     if (e.shiftKey || isSelectionMode) {
-      toggleShiftSelection(shift.id)
+      if (shift.id) toggleShiftSelection(shift.id)
     } else {
       if (selectedShiftIds.length > 0) {
         clearSelection()
@@ -761,7 +762,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
 
     const previousShifts = safeShifts
     const idsToDelete = new Set(selectedShiftIds)
-    setShifts(previousShifts.filter((s) => !idsToDelete.has(s.id)))
+    setShifts(previousShifts.filter((s) => s.id && !idsToDelete.has(s.id)))
     clearSelection()
 
     const { error } = await supabase.from('shifts').delete().in('id', Array.from(idsToDelete))
@@ -773,7 +774,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
   }
 
   const handleCopySelected = () => {
-    const selected = safeShifts.filter((s) => selectedShiftIds.includes(s.id))
+    const selected = safeShifts.filter((s) => s.id && selectedShiftIds.includes(s.id))
     setClipboardShifts(selected)
     clearSelection()
   }
@@ -839,7 +840,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
 
     if (newShifts.length === 0) return
 
-    const tempIds = newShifts.map(() => crypto.randomUUID())
+    const tempIds: string[] = newShifts.map(() => crypto.randomUUID())
     const optimisticShifts = newShifts.map((s, i) => ({ ...s, id: tempIds[i] } as ShiftRecord))
 
     setShifts([...safeShifts, ...optimisticShifts])
@@ -851,7 +852,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
       setError(error.message)
     } else if (data) {
       setShifts((prev) => {
-        const withoutOptimistic = prev.filter((s) => !tempIds.includes(s.id))
+        const withoutOptimistic = prev.filter((s) => !tempIds.includes(s.id ?? ''))
         return [...withoutOptimistic, ...(data as ShiftRecord[])]
       })
     }
@@ -866,7 +867,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
         role={shift.role_id ? roleLookup.get(shift.role_id) ?? null : null}
         timezone={timezone}
         timeFormat={timeFormat}
-        isSelected={selectedShiftIds.includes(shift.id)}
+        isSelected={selectedShiftIds.includes(shift.id ?? '')}
         isSelectionMode={isSelectionMode}
         onClick={handleShiftClick}
         validationErrors={shiftErrors}

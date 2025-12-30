@@ -1,10 +1,12 @@
 import type { ShiftRecord, GridEmployee, EmployeeAvailability, EmployeeUnavailability, CoverageRequirement } from '../types'
 import { toZonedISOString } from '../components/schedule/time'
 
-export enum ConflictSeverity {
-  HARD_BLOCK = 'HARD_BLOCK',
-  SOFT_WARNING = 'SOFT_WARNING',
-}
+export const ConflictSeverity = {
+  HARD_BLOCK: 'HARD_BLOCK',
+  SOFT_WARNING: 'SOFT_WARNING',
+} as const
+
+export type ConflictSeverity = (typeof ConflictSeverity)[keyof typeof ConflictSeverity]
 
 export interface ValidationError {
   id: string
@@ -43,16 +45,23 @@ export function validateSchedule(
   employees: GridEmployee[],
   availability: EmployeeAvailability[] = [],
   unavailability: EmployeeUnavailability[] = [],
-  coverageRequirements: CoverageRequirement[] = [],
-  config: Partial<ValidationConfig> = {}
+  coverageRequirementsOrConfig: CoverageRequirement[] | Partial<ValidationConfig> = [],
+  config: Partial<ValidationConfig> = {},
 ): ValidationError[] {
-  const errors: ValidationError[] = []
-  const finalConfig = { ...DEFAULT_CONFIG, ...config }
+  const coverageRequirements = Array.isArray(coverageRequirementsOrConfig)
+    ? coverageRequirementsOrConfig
+    : []
 
-  if (finalConfig.enableCaliforniaRules) {
-    finalConfig.maxDailyHours = 8
-    finalConfig.maxWeeklyHours = 40
+  const mergedConfig = Array.isArray(coverageRequirementsOrConfig)
+    ? { ...DEFAULT_CONFIG, ...config }
+    : { ...DEFAULT_CONFIG, ...coverageRequirementsOrConfig }
+
+  if (mergedConfig.enableCaliforniaRules) {
+    mergedConfig.maxDailyHours = 8
+    mergedConfig.maxWeeklyHours = 40
   }
+
+  const errors: ValidationError[] = []
 
   // 1. Double Booking
   errors.push(...checkDoubleBooking(shifts))
@@ -64,17 +73,17 @@ export function validateSchedule(
   errors.push(...checkUnavailability(shifts, availability, unavailability))
 
   // 4. Weekly Overtime
-  errors.push(...checkWeeklyOvertime(shifts, finalConfig))
+  errors.push(...checkWeeklyOvertime(shifts, mergedConfig))
 
   // 5. Daily Overtime
-  errors.push(...checkDailyOvertime(shifts, finalConfig))
+  errors.push(...checkDailyOvertime(shifts, mergedConfig))
 
   // 6. Rest Period
-  errors.push(...checkRestPeriod(shifts, finalConfig))
+  errors.push(...checkRestPeriod(shifts, mergedConfig))
 
   // 7. Coverage Requirements
-  if (finalConfig.weekStart) {
-    errors.push(...checkCoverage(shifts, coverageRequirements, finalConfig.weekStart, finalConfig.timezone))
+  if (mergedConfig.weekStart) {
+    errors.push(...checkCoverage(shifts, coverageRequirements, mergedConfig.weekStart, mergedConfig.timezone))
   }
 
   return errors
@@ -120,7 +129,7 @@ function checkDoubleBooking(shifts: ShiftRecord[]): ValidationError[] {
     shiftsByEmployee.set(shift.employee_id, employeeShifts)
   }
 
-  for (const [employeeId, employeeShifts] of shiftsByEmployee) {
+  for (const [, employeeShifts] of shiftsByEmployee) {
     for (let i = 0; i < employeeShifts.length; i++) {
       for (let j = i + 1; j < employeeShifts.length; j++) {
         const s1 = employeeShifts[i]
@@ -252,7 +261,7 @@ function checkWeeklyOvertime(shifts: ShiftRecord[], config: ValidationConfig): V
   const errors: ValidationError[] = []
   const shiftsByEmployee = groupShiftsByEmployee(shifts)
 
-  for (const [employeeId, employeeShifts] of shiftsByEmployee) {
+  for (const [, employeeShifts] of shiftsByEmployee) {
     // Group by week
     const hoursByWeek = new Map<string, number>()
     const shiftsByWeek = new Map<string, ShiftRecord[]>()
@@ -292,20 +301,15 @@ function checkDailyOvertime(shifts: ShiftRecord[], config: ValidationConfig): Va
   const errors: ValidationError[] = []
   const shiftsByEmployee = groupShiftsByEmployee(shifts)
 
-  for (const [employeeId, employeeShifts] of shiftsByEmployee) {
-    // Group by day (start date)
+  for (const [, employeeShifts] of shiftsByEmployee) {
     const hoursByDay = new Map<string, number>()
     const shiftsByDay = new Map<string, ShiftRecord[]>()
 
     for (const shift of employeeShifts) {
-      // Use local date part if timezone provided, else UTC date part
-      // For now, we use the date part of the ISO string which is effectively UTC date
-      // If we want to support timezones properly, we need to convert to that timezone first
       const dateKey = shift.start_datetime.split('T')[0]
-      
       const duration = getShiftDurationHours(shift)
       hoursByDay.set(dateKey, (hoursByDay.get(dateKey) || 0) + duration)
-      
+
       const dayShifts = shiftsByDay.get(dateKey) || []
       dayShifts.push(shift)
       shiftsByDay.set(dateKey, dayShifts)
@@ -320,7 +324,7 @@ function checkDailyOvertime(shifts: ShiftRecord[], config: ValidationConfig): Va
             shiftId: shift.id,
             severity: ConflictSeverity.SOFT_WARNING,
             message: `Daily overtime: ${hours.toFixed(1)}h > ${config.maxDailyHours}h`,
-            ruleType: 'DAILY_OVERTIME'
+            ruleType: 'DAILY_OVERTIME',
           })
         }
       }
@@ -334,29 +338,28 @@ function checkRestPeriod(shifts: ShiftRecord[], config: ValidationConfig): Valid
   const errors: ValidationError[] = []
   const shiftsByEmployee = groupShiftsByEmployee(shifts)
 
-  for (const [employeeId, employeeShifts] of shiftsByEmployee) {
-    // Sort by start time
-    const sortedShifts = [...employeeShifts].sort((a, b) => 
-      new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime()
+  for (const [, employeeShifts] of shiftsByEmployee) {
+    const sortedShifts = [...employeeShifts].sort(
+      (a, b) => new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime(),
     )
 
     for (let i = 0; i < sortedShifts.length - 1; i++) {
       const currentShift = sortedShifts[i]
-      const nextShift = sortedShifts[i+1]
-      
+      const nextShift = sortedShifts[i + 1]
+
       const endCurrent = new Date(currentShift.end_datetime).getTime()
       const startNext = new Date(nextShift.start_datetime).getTime()
-      
+
       const gapHours = (startNext - endCurrent) / (1000 * 60 * 60)
-      
-      if (gapHours < config.minRestPeriodHours && gapHours >= 0) { // gapHours >= 0 ensures no overlap (handled by double booking)
-         errors.push({
-           id: `rp-${nextShift.id}`,
-           shiftId: nextShift.id,
-           severity: ConflictSeverity.SOFT_WARNING,
-           message: `Rest period too short: ${gapHours.toFixed(1)}h < ${config.minRestPeriodHours}h`,
-           ruleType: 'REST_PERIOD'
-         })
+
+      if (gapHours < config.minRestPeriodHours && gapHours >= 0) {
+        errors.push({
+          id: `rp-${nextShift.id}`,
+          shiftId: nextShift.id,
+          severity: ConflictSeverity.SOFT_WARNING,
+          message: `Rest period too short: ${gapHours.toFixed(1)}h < ${config.minRestPeriodHours}h`,
+          ruleType: 'REST_PERIOD',
+        })
       }
     }
   }

@@ -1,3 +1,5 @@
+/// <reference types="vite/client" />
+
 export const env = {
   supabaseUrl: import.meta.env.VITE_SUPABASE_PROJECT_URL,
   supabaseKey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,

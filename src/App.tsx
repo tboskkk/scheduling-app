@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { supabase } from './lib/supabaseClient'

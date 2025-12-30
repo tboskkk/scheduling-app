@@ -156,8 +156,11 @@ function EmployeesManager({ organizationId }: Props) {
 
       return (data || []).map((row) => {
         const role_ids = (row.employee_roles || [])
-          .map((item: { role: RoleRecord | null }) => item?.role?.id)
-          .filter(Boolean) as string[]
+          .flatMap((item) => {
+            const roleValue = (item as { role?: RoleRecord | RoleRecord[] | null }).role
+            if (Array.isArray(roleValue)) return roleValue.map((role) => role.id)
+            return roleValue?.id ? [roleValue.id] : []
+          })
 
         return {
           id: row.id,

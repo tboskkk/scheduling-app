@@ -166,6 +166,7 @@ function DashboardPage({
   }, [locationsQuery.data, employeesQuery.data, shiftsQuery.data, availabilityQuery.data, unavailabilityQuery.data, coverageQuery.data, settings])
 
   const hasData = Boolean(summary && locationsQuery.data?.length)
+  const displayedEmail = userEmail
 
   if (isFetchingManager) {
     return (
@@ -188,6 +189,7 @@ function DashboardPage({
       <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
         <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Dashboard</p>
         <h2 className="text-2xl font-semibold text-white">Week overview</h2>
+        <p className="text-xs text-slate-400">{displayedEmail}</p>
         <p className="text-sm text-slate-300">Live summary for the current week: conflicts, coverage, and quick links.</p>
       </div>
 

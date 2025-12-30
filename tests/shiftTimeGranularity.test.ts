@@ -2,8 +2,8 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { randomUUID } from 'crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-const supabaseUrl = process.env.VITE_SUPABASE_PROJECT_URL
-const publishableKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY
+const supabaseUrl = process.env.VITE_SUPABASE_PROJECT_URL!
+const publishableKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY!
 const secretKey = process.env.SUPABASE_SECRET_KEY
 
 if (!supabaseUrl || !publishableKey || !secretKey) {

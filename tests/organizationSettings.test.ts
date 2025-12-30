@@ -4,8 +4,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { validateSchedule, ConflictSeverity } from '../src/lib/rules-engine'
 import { OrganizationSettings } from '../src/types'
 
-const supabaseUrl = process.env.VITE_SUPABASE_PROJECT_URL
-const publishableKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY
+const supabaseUrl = process.env.VITE_SUPABASE_PROJECT_URL!
+const publishableKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY!
 const secretKey = process.env.SUPABASE_SECRET_KEY
 
 if (!supabaseUrl || !publishableKey || !secretKey) {

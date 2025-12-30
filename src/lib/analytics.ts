@@ -15,7 +15,7 @@ class Analytics {
     if (this.initialized) return;
     
     // Check if analytics is enabled via env var
-    this.enabled = env.VITE_ENABLE_ANALYTICS === 'true';
+    this.enabled = env.enableAnalytics;
     this.initialized = true;
 
     if (this.enabled) {
@@ -29,7 +29,7 @@ class Analytics {
 
     // In a real implementation, this would send data to an analytics provider
     // For now, we'll just log it if we're in development
-    if (env.VITE_APP_ENVIRONMENT === 'development') {
+    if (env.environment === 'development') {
       logger.info(`[Analytics] ${eventName}`, properties);
     }
   }
@@ -43,7 +43,7 @@ class Analytics {
     if (!this.enabled) return;
 
     // Don't log PII in development
-    if (env.VITE_APP_ENVIRONMENT === 'development') {
+    if (env.environment === 'development') {
       logger.info(`[Analytics] Identify user`, { userId, ...traits });
     }
   }

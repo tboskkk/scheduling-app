@@ -130,7 +130,7 @@ function EditShiftDialog({ isOpen, onClose, shift, timezone, employees, roles, o
         .eq('id', shift.id)
 
       if (deleteError) throw new Error(deleteError.message)
-      onDeleted(shift.id)
+      if (shift.id) onDeleted(shift.id)
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to delete shift')
@@ -195,19 +195,11 @@ function EditShiftDialog({ isOpen, onClose, shift, timezone, employees, roles, o
            breakStartIso = toZonedISOString(nextDay, breakStartTime, timezone)
         }
         
-        if (new Date(breakEndIso) <= new Date(breakStartIso)) {
-           // Break crosses midnight or ends next day
-           const breakStartDate = new Date(breakStartIso)
-           const nextDay = new Date(breakStartDate)
-           // If we haven't already moved it to next day... this logic is getting tricky.
-           // Let's rely on the fact that break must be INSIDE shift.
-           
-           // Re-calculate based on shift bounds.
-           // If breakStart < startIso, add a day.
-           // If breakEnd < breakStart, add a day to end.
-        }
-        
-        // Let's try a more robust approach:
+          if (new Date(breakEndIso) <= new Date(breakStartIso)) {
+            // Break crosses midnight or ends next day; handled by bumping end below
+          }
+
+          // Robust approach:
         // 1. Construct candidate break start on Day 1.
         // 2. If candidate < startIso, try Day 2.
         // 3. Check if inside shift.

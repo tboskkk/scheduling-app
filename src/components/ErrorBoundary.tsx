@@ -1,4 +1,4 @@
-import { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { logger } from '../lib/logger';
 
 interface Props {
@@ -53,7 +53,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 Refresh Page
               </button>
             </div>
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {import.meta.env.DEV && this.state.error && (
               <div className="mt-8 text-left">
                 <details className="whitespace-pre-wrap text-xs text-red-600 bg-red-50 p-4 rounded border border-red-200 overflow-auto max-h-64">
                   <summary className="cursor-pointer font-bold mb-2">Error Details</summary>

@@ -18,16 +18,17 @@ export type Schedule = {
   created_at: string;
 }
 
+// Shift coming from the API may be partially populated (e.g., before insert returns id).
 export type ShiftRecord = {
-  id: string
+  id?: string
   location_id: string
-  schedule_id: string | null
+  schedule_id?: string | null
   employee_id: string | null
   role_id: string | null
   start_datetime: string
   end_datetime: string
-  break_start_datetime: string | null
-  break_end_datetime: string | null
+  break_start_datetime?: string | null
+  break_end_datetime?: string | null
 }
 
 export type GridEmployee = {
@@ -35,7 +36,7 @@ export type GridEmployee = {
   name: string
   is_floating: boolean
   home_location_id: string | null
-  display_order: number
+  display_order?: number
 }
 
 export type EmployeeAvailability = {

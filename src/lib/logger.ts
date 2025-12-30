@@ -49,18 +49,10 @@ class Logger {
     const timestamp = new Date().toISOString();
     const sanitizedContext = context ? this.sanitize(context) : undefined;
 
-    const event: LogEvent = {
-      level,
-      message,
-      context: sanitizedContext as Record<string, unknown>,
-      timestamp,
-      error,
-    };
-
     // In production, we might want to send this to a logging service
     // For now, we'll log to the console with appropriate styling
     
-    if (env.VITE_APP_ENVIRONMENT === 'test') {
+    if (env.environment === 'test') {
         // minimal logging in test
         return; 
     }
