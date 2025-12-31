@@ -297,7 +297,7 @@ function checkWeeklyOvertime(shifts: ShiftRecord[], config: ValidationConfig): V
   return errors
 }
 
-function checkDailyOvertime(shifts: ShiftRecord[], config: ValidationConfig): ValidationError[] {
+export function checkDailyOvertime(shifts: ShiftRecord[], config: ValidationConfig): ValidationError[] {
   const errors: ValidationError[] = []
   const shiftsByEmployee = groupShiftsByEmployee(shifts)
 
@@ -521,7 +521,7 @@ function getWeekStart(date: Date, weekStartDay: number): Date {
   return d
 }
 
-function getShiftDurationHours(shift: ShiftRecord): number {
+export function getShiftDurationHours(shift: ShiftRecord): number {
   const start = new Date(shift.start_datetime).getTime()
   const end = new Date(shift.end_datetime).getTime()
   const rawDuration = (end - start) / (1000 * 60 * 60)

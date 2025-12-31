@@ -6,7 +6,7 @@ interface OnboardingWizardProps {
   onComplete: (orgId: string) => void
 }
 
-type WizardStep = 'org' | 'roles' | 'locations' | 'coverage' | 'review'
+type WizardStep = 'org' | 'roles' | 'locations' | 'coverage' | 'employees' | 'review'
 
 interface RoleDraft {
   id: string // temp id
@@ -27,6 +27,18 @@ interface CoverageDraft {
   startTime: string
   endTime: string
   days: number[] // 0-6
+}
+
+interface EmployeeDraft {
+  id: string // temp id
+  name: string
+  email: string
+  phone: string
+  hourlyRate: string
+  homeLocationId: string
+  roleIds: string[]
+  isFloating: boolean
+  isActive: boolean
 }
 
 const DEFAULT_ROLES: RoleDraft[] = [
@@ -67,6 +79,18 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
   const [covEnd, setCovEnd] = useState('17:00')
   const [covMin, setCovMin] = useState(1)
 
+  // Step 5: Employees
+  const [employees, setEmployees] = useState<EmployeeDraft[]>([])
+  
+  // Employee Form State
+  const [empName, setEmpName] = useState('')
+  const [empEmail, setEmpEmail] = useState('')
+  const [empPhone, setEmpPhone] = useState('')
+  const [empHourlyRate, setEmpHourlyRate] = useState('')
+  const [empHomeLocation, setEmpHomeLocation] = useState('')
+  const [empRoles, setEmpRoles] = useState<string[]>([])
+  const [empIsFloating, setEmpIsFloating] = useState(false)
+
   const handleNext = () => {
     if (step === 'org') {
       if (!orgName.trim()) {
@@ -90,6 +114,11 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
       if (locations.length > 0) setCovLocation(locations[0].id)
       setStep('coverage')
     } else if (step === 'coverage') {
+      setStep('employees')
+      // Initialize employee form defaults
+      if (locations.length > 0) setEmpHomeLocation(locations[0].id)
+      if (roles.length > 0) setEmpRoles([roles[0].id])
+    } else if (step === 'employees') {
       setStep('review')
     }
     setError(null)
@@ -99,7 +128,8 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
     if (step === 'roles') setStep('org')
     else if (step === 'locations') setStep('roles')
     else if (step === 'coverage') setStep('locations')
-    else if (step === 'review') setStep('coverage')
+    else if (step === 'employees') setStep('coverage')
+    else if (step === 'review') setStep('employees')
     setError(null)
   }
 
@@ -181,6 +211,50 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
         }
       }
 
+      // 6. Insert Employees
+      for (const emp of employees) {
+        const realHomeLocationId = emp.homeLocationId ? locMap.get(emp.homeLocationId) : null
+        
+        const { data: newEmployee, error: empError } = await supabase
+          .from('employees')
+          .insert({
+            organization_id: orgId,
+            name: emp.name,
+            email: emp.email || null,
+            phone: emp.phone || null,
+            hourly_rate: emp.hourlyRate ? parseFloat(emp.hourlyRate) : null,
+            home_location_id: realHomeLocationId,
+            is_floating: emp.isFloating,
+            is_active: emp.isActive,
+          })
+          .select()
+          .single()
+
+        if (empError) {
+          console.error('Error creating employee:', empError)
+          continue
+        }
+
+        // Insert employee roles
+        if (newEmployee && emp.roleIds.length > 0) {
+          const roleInserts = emp.roleIds
+            .map(roleId => roleMap.get(roleId))
+            .filter(Boolean)
+            .map(realRoleId => ({
+              employee_id: newEmployee.id,
+              role_id: realRoleId
+            }))
+
+          if (roleInserts.length > 0) {
+            const { error: roleError } = await supabase
+              .from('employee_roles')
+              .insert(roleInserts)
+            
+            if (roleError) console.error('Error assigning employee roles:', roleError)
+          }
+        }
+      }
+
       onComplete(orgId as string)
 
     } catch (err: any) {
@@ -221,6 +295,41 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
     }])
   }
 
+  // Helper to add employee
+  const addEmployee = () => {
+    if (!empName.trim()) return
+    
+    setEmployees([...employees, {
+      id: Math.random().toString(),
+      name: empName.trim(),
+      email: empEmail.trim(),
+      phone: empPhone.trim(),
+      hourlyRate: empHourlyRate,
+      homeLocationId: empHomeLocation,
+      roleIds: [...empRoles],
+      isFloating: empIsFloating,
+      isActive: true
+    }])
+    
+    // Reset form
+    setEmpName('')
+    setEmpEmail('')
+    setEmpPhone('')
+    setEmpHourlyRate('')
+    setEmpHomeLocation(locations.length > 0 ? locations[0].id : '')
+    setEmpRoles(roles.length > 0 ? [roles[0].id] : [])
+    setEmpIsFloating(false)
+  }
+
+  // Helper to toggle employee role
+  const toggleEmployeeRole = (roleId: string) => {
+    if (empRoles.includes(roleId)) {
+      setEmpRoles(empRoles.filter(id => id !== roleId))
+    } else {
+      setEmpRoles([...empRoles, roleId])
+    }
+  }
+
   const toggleDay = (dayIndex: number) => {
     if (covDays.includes(dayIndex)) {
       setCovDays(covDays.filter(d => d !== dayIndex))
@@ -241,13 +350,13 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-semibold text-white">Setup Organization</h2>
           <div className="text-sm text-slate-400">Step {
-            step === 'org' ? 1 : step === 'roles' ? 2 : step === 'locations' ? 3 : step === 'coverage' ? 4 : 5
-          } of 5</div>
+            step === 'org' ? 1 : step === 'roles' ? 2 : step === 'locations' ? 3 : step === 'coverage' ? 4 : step === 'employees' ? 5 : 6
+          } of 6</div>
         </div>
         <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
           <div 
             className="h-full bg-blue-500 transition-all duration-300"
-            style={{ width: step === 'org' ? '20%' : step === 'roles' ? '40%' : step === 'locations' ? '60%' : step === 'coverage' ? '80%' : '100%' }}
+            style={{ width: step === 'org' ? '16.67%' : step === 'roles' ? '33.33%' : step === 'locations' ? '50%' : step === 'coverage' ? '66.67%' : step === 'employees' ? '83.33%' : '100%' }}
           />
         </div>
       </div>
@@ -425,9 +534,9 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                     <line x1="12" y1="16" x2="12" y2="12"></line>
                     <line x1="12" y1="8" x2="12.01" y2="8"></line>
                   </svg>
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-slate-800 border border-slate-700 rounded-lg shadow-xl text-xs text-slate-300 hidden group-hover:block z-50 pointer-events-none">
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-slate-800 border border-slate-700 rounded-lg shadow-xl text-xs text-slate-300 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
                     Enables specific overtime and break rules for California labor laws, including daily overtime after 8 hours, double time after 12 hours, and 7th consecutive day overtime rules.
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 border-b border-r border-slate-700 rotate-45"></div>
+                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 border-b border-r border-slate-700 rotate-45 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200"></div>
                   </div>
                 </div>
               </div>
@@ -639,6 +748,145 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
         </div>
       )}
 
+      {step === 'employees' && (
+        <div className="space-y-6">
+          <p className="text-slate-300 text-sm">
+            (Optional) Add your employees now to get started with scheduling faster. You can always add more later.
+          </p>
+
+          <div className="bg-slate-800/30 p-4 rounded-lg border border-slate-800">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Name *</label>
+                <input
+                  type="text"
+                  value={empName}
+                  onChange={e => setEmpName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && addEmployee()}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
+                  placeholder="e.g. John Smith"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={empEmail}
+                  onChange={e => setEmpEmail(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
+                  placeholder="john@example.com"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={empPhone}
+                  onChange={e => setEmpPhone(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
+                  placeholder="(555) 123-4567"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Hourly Rate ({settings.currency})</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={empHourlyRate}
+                  onChange={e => setEmpHourlyRate(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
+                  placeholder="18.50"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Home Location</label>
+                <select
+                  value={empHomeLocation}
+                  onChange={e => setEmpHomeLocation(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
+                >
+                  <option value="">Unassigned</option>
+                  {locations.map(l => (
+                    <option key={l.id} value={l.id}>{l.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={empIsFloating}
+                    onChange={e => setEmpIsFloating(e.target.checked)}
+                    className="rounded bg-slate-950 border-slate-700"
+                  />
+                  <span className="text-sm text-slate-300">Floating (can work any location)</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-xs text-slate-400 mb-2">Roles</label>
+              <div className="flex flex-wrap gap-2">
+                {roles.map(role => (
+                  <button
+                    key={role.id}
+                    type="button"
+                    onClick={() => toggleEmployeeRole(role.id)}
+                    className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${
+                      empRoles.includes(role.id)
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
+                        : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                    }`}
+                  >
+                    {role.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <button
+              onClick={addEmployee}
+              disabled={!empName.trim()}
+              className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              Add Employee
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            {employees.map((emp, idx) => {
+              const empRoleNames = emp.roleIds.map(roleId => roles.find(r => r.id === roleId)?.name).filter(Boolean)
+              const empLocationName = emp.homeLocationId ? locations.find(l => l.id === emp.homeLocationId)?.name : 'Unassigned'
+              
+              return (
+                <div key={idx} className="flex items-center justify-between bg-slate-800/50 border border-slate-700 rounded p-3 text-sm">
+                  <div>
+                    <div className="text-white font-medium">{emp.name}</div>
+                    <div className="text-xs text-slate-400">
+                      {empRoleNames.join(', ')} • {emp.isFloating ? 'Floating' : empLocationName}
+                      {emp.hourlyRate && ` • ${settings.currency}${emp.hourlyRate}/hr`}
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setEmployees(employees.filter((_, i) => i !== idx))} 
+                    className="text-slate-500 hover:text-red-400"
+                  >
+                    &times;
+                  </button>
+                </div>
+              )
+            })}
+            {employees.length === 0 && (
+              <div className="text-center text-slate-500 text-xs italic py-2">No employees added yet</div>
+            )}
+          </div>
+        </div>
+      )}
+
       {step === 'review' && (
         <div className="space-y-6">
           <h3 className="text-lg font-medium text-white">Review & Create</h3>
@@ -670,6 +918,21 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                   ))}
                 </div>
               </div>
+            </div>
+
+            <div className="bg-slate-800/30 rounded-lg p-4 border border-slate-800">
+              <div className="text-slate-400 text-xs uppercase tracking-wider mb-2">Employees ({employees.length})</div>
+              {employees.length > 0 ? (
+                <div className="space-y-1">
+                  {employees.map(emp => (
+                    <div key={emp.id} className="text-slate-200 text-xs">
+                      {emp.name} • {emp.roleIds.map(roleId => roles.find(r => r.id === roleId)?.name).filter(Boolean).join(', ')}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-slate-500 text-xs italic">No employees added - you can add them later</div>
+              )}
             </div>
           </div>
         </div>

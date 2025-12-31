@@ -1,3 +1,4 @@
+import React, { useCallback } from 'react'
 import { CSS } from '@dnd-kit/utilities'
 import { useDraggable } from '@dnd-kit/core'
 import type { ShiftRecord } from '../../types'
@@ -67,13 +68,17 @@ function ShiftCard({ shift, role, timezone, isSelected, isSelectionMode, onClick
     ? validationErrors.map(e => `${e.severity === ConflictSeverity.HARD_BLOCK ? '⛔' : '⚠️'} ${e.message}`).join('\n')
     : undefined
 
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    onClick?.(shift, e)
+  }, [onClick, shift])
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       {...attributes}
       {...listeners}
-      onClick={(e) => onClick?.(shift, e)}
+      onClick={handleClick}
       title={tooltipText}
       className={`group relative w-full cursor-grab rounded-lg border bg-slate-900/85 px-3 py-2 text-[12px] text-slate-100 shadow-sm shadow-black/30 transition ${borderClass} ${cardActiveClass} ${isSelectionMode ? 'cursor-pointer' : ''}`}
     >
@@ -114,4 +119,4 @@ function ShiftCard({ shift, role, timezone, isSelected, isSelectionMode, onClick
   )
 }
 
-export default ShiftCard
+export default React.memo(ShiftCard)

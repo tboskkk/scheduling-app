@@ -20,7 +20,7 @@ The following environment variables must be configured in the Cloudflare Pages p
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | The anonymous public key for Supabase | Yes | `eyJ...` |
 | `VITE_APP_ENVIRONMENT` | The environment name | Yes | `production` |
 | `VITE_ENABLE_ANALYTICS` | Enable analytics logging | No | `true` |
-| `VITE_ALLOWED_EMAIL_DOMAINS` | Comma-separated list of allowed email domains for registration | No | `example.com,org.com` |
+| `VITE_ALLOWED_EMAIL_DOMAINS` | Comma-separated list of allowed email domains for registration. If empty, uses smart pattern matching to allow business emails while blocking temporary/disposable domains | No | `example.com,corp.com` or leave empty for pattern matching |
 
 **Security Note:** Never commit `.env.production` or `.env.local` files containing secrets to the repository.
 

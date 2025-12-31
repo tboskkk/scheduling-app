@@ -66,6 +66,13 @@ export type CoverageRequirement = {
   min_employees: number
 }
 
+export interface QuickShift {
+  id: string;
+  label: string;
+  start: string;
+  end: string;
+}
+
 export interface OrganizationSettings {
   weekly_overtime_threshold: number;
   daily_overtime_threshold: number;
@@ -74,6 +81,7 @@ export interface OrganizationSettings {
   enable_california_rules: boolean;
   time_format: '12h' | '24h';
   currency: string;
+  quick_shifts: QuickShift[];
 }
 
 export const DEFAULT_ORGANIZATION_SETTINGS: OrganizationSettings = {
@@ -84,6 +92,12 @@ export const DEFAULT_ORGANIZATION_SETTINGS: OrganizationSettings = {
   enable_california_rules: false,
   time_format: '12h',
   currency: 'CAD',
+  quick_shifts: [
+    { id: '1', label: 'Morning', start: '08:00', end: '12:00' },
+    { id: '2', label: 'Day', start: '09:00', end: '17:00' },
+    { id: '3', label: 'Evening', start: '12:00', end: '20:00' },
+    { id: '4', label: 'Night', start: '22:00', end: '06:00' },
+  ],
 };
 
 export interface Organization {

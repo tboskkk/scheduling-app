@@ -3,13 +3,12 @@ import type { GridEmployee, ShiftRecord } from '../../types'
 import type { RoleInfo } from './ShiftCard'
 import { formatTimeLabel, type TimeDisplayFormat } from './time'
 
-// Register a reliable Roboto using TTF sources (woff2 can break PDF embedding). This also satisfies any
-// lingering fontFamily references after hot reloads.
+// Register local Roboto fonts (no external dependencies, CSP-compliant)
 Font.register({
   family: 'Roboto',
   fonts: [
-    { src: 'https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxP.ttf' },
-    { src: 'https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmWUlfBBc9.ttf', fontWeight: 'bold' },
+    { src: '/fonts/roboto-regular.ttf' },
+    { src: '/fonts/roboto-bold.ttf', fontWeight: 'bold' },
   ],
 })
 
@@ -17,8 +16,8 @@ Font.register({
 Font.register({
   family: 'Helvetica',
   fonts: [
-    { src: 'https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxP.ttf' },
-    { src: 'https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmWUlfBBc9.ttf', fontWeight: 'bold' },
+    { src: '/fonts/roboto-regular.ttf' },
+    { src: '/fonts/roboto-bold.ttf', fontWeight: 'bold' },
   ],
 })
 

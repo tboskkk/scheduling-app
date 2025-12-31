@@ -24,8 +24,7 @@ describe('Build System Compatibility', () => {
         // Check manual chunks are configured
         expect(config.build?.rollupOptions?.output?.manualChunks).toBeDefined();
         const chunks = config.build?.rollupOptions?.output?.manualChunks;
-        expect(chunks).toHaveProperty('vendor');
-        expect(chunks).toHaveProperty('supabase');
+        expect(typeof chunks).toBe('function');
       })
     );
   });

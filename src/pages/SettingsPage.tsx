@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import RolesManager from '../components/RolesManager'
+import QuickShiftsManager from '../components/QuickShiftsManager'
 import { useOrganizationStore } from '../lib/useOrganizationStore'
 import type { OrganizationSettings } from '../types'
 
@@ -39,8 +40,8 @@ function SettingsPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-6">
+    <div className="space-y-8" style={{ transform: 'translateZ(0)' }}>
+      <div className="rounded-xl border border-slate-800 bg-slate-900 p-6" style={{ transform: 'translateZ(0)' }}>
         <div className="flex justify-between items-start mb-6">
           <div>
             <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Settings</p>
@@ -60,7 +61,7 @@ function SettingsPage() {
 
         {localSettings && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="col-span-1 md:col-span-2 mb-2 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+            <div className="col-span-1 md:col-span-2 mb-2 p-4 bg-slate-800 rounded-lg border border-slate-700">
               <label className="block text-sm font-medium text-slate-300 mb-2">
                 Quick Setup: Region / Province
               </label>
@@ -267,9 +268,9 @@ function SettingsPage() {
                       <line x1="12" y1="16" x2="12" y2="12"></line>
                       <line x1="12" y1="8" x2="12.01" y2="8"></line>
                     </svg>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-slate-800 border border-slate-700 rounded-lg shadow-xl text-xs text-slate-300 hidden group-hover:block z-50 pointer-events-none">
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-slate-800 border border-slate-700 rounded-lg shadow-xl text-xs text-slate-300 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
                       Enables specific overtime and break rules for California labor laws, including daily overtime after 8 hours, double time after 12 hours, and 7th consecutive day overtime rules.
-                      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 border-b border-r border-slate-700 rotate-45"></div>
+                      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 border-b border-r border-slate-700 rotate-45 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200"></div>
                     </div>
                   </div>
                 </div>
@@ -279,7 +280,14 @@ function SettingsPage() {
         )}
       </div>
 
-      <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-6">
+      <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <QuickShiftsManager 
+          quickShifts={localSettings?.quick_shifts || []}
+          onChange={(quickShifts) => handleChange('quick_shifts', quickShifts)}
+        />
+      </div>
+
+      <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
         <h2 className="text-xl font-semibold text-white mb-4">Roles Management</h2>
         <p className="text-sm text-slate-300 mb-6">
           Create and manage roles that can be assigned to employees and shifts.
@@ -287,14 +295,14 @@ function SettingsPage() {
         <RolesManager />
       </div>
 
-      <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-6">
+      <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
         <h2 className="text-xl font-semibold text-white mb-4">Data Privacy & Compliance</h2>
         <p className="text-sm text-slate-300 mb-6">
           Manage your data and account settings.
         </p>
         
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+          <div className="flex items-center justify-between p-4 bg-slate-800 rounded-lg border border-slate-700">
             <div>
               <h3 className="text-sm font-medium text-white">Download Your Data</h3>
               <p className="text-xs text-slate-400 mt-1">

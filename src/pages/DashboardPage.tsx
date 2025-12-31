@@ -1,14 +1,15 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
 import type { ManagerProfile } from '../types'
 import { DEFAULT_ORGANIZATION_SETTINGS } from '../types'
-import { supabase } from '../lib/supabaseClient'
 import { computeDashboardSummary } from '../lib/dashboard-summary'
 import { startOfWeekWithOffset } from '../lib/schedule-utils'
 import { useOrganizationStore } from '../lib/useOrganizationStore'
 import { formatWeekRange } from '../components/schedule/useScheduleStore'
 import OnboardingWizard from '../components/OnboardingWizard'
+import { ErrorDetailsModal } from '../components/schedule/ErrorDetailsModal'
+import { validateSchedule } from '../lib/rules-engine'
+import { useGlobalValidation } from '../hooks/useGlobalValidation'
 
 interface DashboardPageProps {
   managerProfile: ManagerProfile | null
@@ -27,6 +28,25 @@ function DashboardPage({
   const orgId = managerProfile?.organization_id ?? null
   const isManagerMissing = !managerProfile
 
+  // Modal state for error details
+  const [showGlobalErrors, setShowGlobalErrors] = useState(false)
+  const [selectedLocationErrors, setSelectedLocationErrors] = useState<{ locationId: string; locationName: string } | null>(null)
+
+  // Use global validation hook
+  const { 
+    validationErrors: globalErrors, 
+    locations, 
+    employees, 
+    shifts, 
+    availability, 
+    unavailability, 
+    coverage,
+    isLoading 
+  } = useGlobalValidation({
+    organizationId: orgId,
+    enabled: Boolean(orgId)
+  })
+
   useEffect(() => {
     if (!organization) {
       fetchOrganization().catch(() => {
@@ -38,134 +58,49 @@ function DashboardPage({
   const settings = organization?.settings ?? DEFAULT_ORGANIZATION_SETTINGS
   const weekStartDate = useMemo(() => startOfWeekWithOffset(new Date(), settings.week_start_day), [settings.week_start_day])
   const weekStartIso = useMemo(() => weekStartDate.toISOString(), [weekStartDate])
-  const weekEndIso = useMemo(() => {
-    const end = new Date(weekStartDate)
-    end.setDate(end.getDate() + 7)
-    return end.toISOString()
-  }, [weekStartDate])
   const weekLabel = useMemo(() => formatWeekRange(weekStartIso, null), [weekStartIso])
 
-  const locationsQuery = useQuery({
-    queryKey: ['dashboard-locations', orgId],
-    enabled: Boolean(orgId),
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('locations')
-        .select('id, name, timezone')
-        .eq('organization_id', orgId)
-        .order('name', { ascending: true })
-
-      if (error) throw new Error(error.message)
-      return data as { id: string; name: string; timezone: string | null }[]
-    },
-  })
-
-  const employeesQuery = useQuery({
-    queryKey: ['dashboard-employees', orgId],
-    enabled: Boolean(orgId),
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('employees')
-        .select('id, name, is_floating, home_location_id, is_active')
-        .eq('organization_id', orgId)
-        .eq('is_active', true)
-        .order('name', { ascending: true })
-
-      if (error) throw new Error(error.message)
-      return (data ?? []).map((row) => ({
-        id: row.id,
-        name: row.name,
-        is_floating: row.is_floating,
-        home_location_id: row.home_location_id,
-      }))
-    },
-  })
-
-  const availabilityQuery = useQuery({
-    queryKey: ['dashboard-availability', orgId],
-    enabled: Boolean(orgId),
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('employee_availability')
-        .select('*')
-        .eq('organization_id', orgId)
-
-      if (error) throw new Error(error.message)
-      return data ?? []
-    },
-  })
-
-  const unavailabilityQuery = useQuery({
-    queryKey: ['dashboard-unavailability', orgId],
-    enabled: Boolean(orgId),
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('employee_unavailability')
-        .select('*')
-        .eq('organization_id', orgId)
-
-      if (error) throw new Error(error.message)
-      return data ?? []
-    },
-  })
-
-  const locationIds = locationsQuery.data?.map((loc) => loc.id) ?? []
-
-  const coverageQuery = useQuery({
-    queryKey: ['dashboard-coverage', locationIds.join('-')],
-    enabled: locationIds.length > 0,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('coverage_requirements')
-        .select('*')
-        .in('location_id', locationIds)
-
-      if (error) throw new Error(error.message)
-      return data ?? []
-    },
-  })
-
-  const shiftsQuery = useQuery({
-    queryKey: ['dashboard-shifts', orgId, weekStartIso, weekEndIso, locationIds.join('-')],
-    enabled: locationIds.length > 0,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('shifts')
-        .select('id, location_id, employee_id, role_id, start_datetime, end_datetime')
-        .eq('organization_id', orgId)
-        .in('location_id', locationIds)
-        .gte('start_datetime', weekStartIso)
-        .lt('start_datetime', weekEndIso)
-        .order('start_datetime', { ascending: true })
-
-      if (error) throw new Error(error.message)
-      return data ?? []
-    },
-  })
-
-  const isLoading =
-    locationsQuery.isLoading ||
-    employeesQuery.isLoading ||
-    shiftsQuery.isLoading ||
-    availabilityQuery.isLoading ||
-    unavailabilityQuery.isLoading ||
-    coverageQuery.isLoading
-
   const summary = useMemo(() => {
-    if (!locationsQuery.data || !employeesQuery.data || !shiftsQuery.data) return null
+    if (!locations || !employees || !shifts) return null
     return computeDashboardSummary({
-      locations: locationsQuery.data,
-      shifts: shiftsQuery.data,
-      employees: employeesQuery.data,
-      availability: availabilityQuery.data ?? [],
-      unavailability: unavailabilityQuery.data ?? [],
-      coverageRequirements: coverageQuery.data ?? [],
+      locations: locations,
+      shifts: shifts,
+      employees: employees,
+      availability: availability,
+      unavailability: unavailability,
+      coverageRequirements: coverage,
       settings,
       now: new Date(),
     })
-  }, [locationsQuery.data, employeesQuery.data, shiftsQuery.data, availabilityQuery.data, unavailabilityQuery.data, coverageQuery.data, settings])
+  }, [locations, employees, shifts, availability, unavailability, coverage, settings])
 
-  const hasData = Boolean(summary && locationsQuery.data?.length)
+  // Compute location-specific errors
+  const locationErrors = useMemo(() => {
+    if (!selectedLocationErrors || !locations || !employees || !shifts) return []
+    
+    const locationShifts = shifts.filter(shift => shift.location_id === selectedLocationErrors.locationId)
+    const locationCoverage = coverage.filter(c => c.location_id === selectedLocationErrors.locationId)
+    const location = locations.find(loc => loc.id === selectedLocationErrors.locationId)
+    
+    return validateSchedule(
+      locationShifts,
+      employees,
+      availability,
+      unavailability,
+      locationCoverage,
+      {
+        weekStart: weekStartDate,
+        weekStartDay: settings.week_start_day,
+        maxWeeklyHours: settings.weekly_overtime_threshold,
+        maxDailyHours: settings.daily_overtime_threshold,
+        minRestPeriodHours: settings.min_rest_period_hours,
+        enableCaliforniaRules: settings.enable_california_rules,
+        timezone: location?.timezone || undefined,
+      }
+    )
+  }, [selectedLocationErrors, locations, employees, shifts, availability, unavailability, coverage, settings, weekStartDate])
+
+  const hasData = Boolean(summary && locations?.length)
   const displayedEmail = userEmail
 
   if (isFetchingManager) {
@@ -216,11 +151,11 @@ function DashboardPage({
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Locations</p>
-                  <p className="text-lg font-semibold text-white">{locationsQuery.data?.length ?? 0}</p>
+                  <p className="text-lg font-semibold text-white">{locations?.length ?? 0}</p>
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Active employees</p>
-                  <p className="text-lg font-semibold text-white">{employeesQuery.data?.length ?? 0}</p>
+                  <p className="text-lg font-semibold text-white">{employees?.length ?? 0}</p>
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Week start</p>
@@ -232,12 +167,18 @@ function DashboardPage({
             <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-5">
               <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Conflicts</p>
               <div className="mt-2 flex items-center gap-3 text-sm font-semibold text-white">
-                <span className="inline-flex items-center gap-2 rounded-md bg-red-500/10 px-3 py-1 text-red-200 ring-1 ring-red-500/30">
+                <button
+                  onClick={() => setShowGlobalErrors(true)}
+                  className="inline-flex items-center gap-2 rounded-md bg-red-500/10 px-3 py-1 text-red-200 ring-1 ring-red-500/30 hover:bg-red-500/20 transition-colors"
+                >
                   🔴 {summary.hardBlockCount}
-                </span>
-                <span className="inline-flex items-center gap-2 rounded-md bg-amber-500/10 px-3 py-1 text-amber-200 ring-1 ring-amber-500/30">
+                </button>
+                <button
+                  onClick={() => setShowGlobalErrors(true)}
+                  className="inline-flex items-center gap-2 rounded-md bg-amber-500/10 px-3 py-1 text-amber-200 ring-1 ring-amber-500/30 hover:bg-amber-500/20 transition-colors"
+                >
                   ⚠️ {summary.softWarningCount}
-                </span>
+                </button>
               </div>
               <div className="mt-3 space-y-2 text-sm text-slate-200">
                 {summary.locationBreakdown.map((loc) => (
@@ -247,8 +188,18 @@ function DashboardPage({
                       <p className="text-[12px] text-slate-400">{loc.shiftCount} shifts</p>
                     </div>
                     <div className="flex items-center gap-2 text-[12px] font-semibold">
-                      <span className="rounded-full bg-red-500/10 px-2 py-[2px] text-red-200 ring-1 ring-red-500/30">{loc.hardBlocks}</span>
-                      <span className="rounded-full bg-amber-500/10 px-2 py-[2px] text-amber-200 ring-1 ring-amber-500/30">{loc.softWarnings}</span>
+                      <button
+                        onClick={() => setSelectedLocationErrors({ locationId: loc.locationId, locationName: loc.locationName })}
+                        className="rounded-full bg-red-500/10 px-2 py-[2px] text-red-200 ring-1 ring-red-500/30 hover:bg-red-500/20 transition-colors"
+                      >
+                        {loc.hardBlocks}
+                      </button>
+                      <button
+                        onClick={() => setSelectedLocationErrors({ locationId: loc.locationId, locationName: loc.locationName })}
+                        className="rounded-full bg-amber-500/10 px-2 py-[2px] text-amber-200 ring-1 ring-amber-500/30 hover:bg-amber-500/20 transition-colors"
+                      >
+                        {loc.softWarnings}
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -312,7 +263,7 @@ function DashboardPage({
             <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-5 md:col-span-2">
               <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Location quick links</p>
               <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {locationsQuery.data?.map((loc) => (
+                {locations?.map((loc) => (
                   <Link
                     key={loc.id}
                     to={`/schedule/${loc.id}`}
@@ -347,6 +298,21 @@ function DashboardPage({
           </div>
         </>
       )}
+
+      {/* Error Details Modals */}
+      <ErrorDetailsModal
+        isOpen={showGlobalErrors}
+        onClose={() => setShowGlobalErrors(false)}
+        errors={globalErrors}
+        title="All Schedule Issues"
+      />
+
+      <ErrorDetailsModal
+        isOpen={!!selectedLocationErrors}
+        onClose={() => setSelectedLocationErrors(null)}
+        errors={locationErrors}
+        title={selectedLocationErrors ? `${selectedLocationErrors.locationName} Issues` : "Location Issues"}
+      />
     </div>
   )
 }

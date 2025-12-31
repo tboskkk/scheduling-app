@@ -1,15 +1,10 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { supabase } from '../../lib/supabaseClient'
+import { useOrganizationStore } from '../../lib/useOrganizationStore'
 import type { GridEmployee, ShiftRecord } from '../../types'
 import type { RoleInfo } from './ShiftCard'
-import { toZonedISOString } from './time'
+import { toZonedISOString, formatTimeLabel } from './time'
 
-const PRESETS = [
-  { label: 'Morning', start: '08:00', end: '12:00' },
-  { label: 'Day', start: '09:00', end: '17:00' },
-  { label: 'Evening', start: '12:00', end: '20:00' },
-  { label: 'Night', start: '22:00', end: '06:00' },
-]
 
 type QuickAddShiftDialogProps = {
   isOpen: boolean
@@ -24,6 +19,7 @@ type QuickAddShiftDialogProps = {
 }
 
 function QuickAddShiftDialog({ isOpen, onClose, date, timezone, employee, locationId, organizationId, roles, onCreated }: QuickAddShiftDialogProps) {
+  const { organization, fetchOrganization } = useOrganizationStore()
   const [roleId, setRoleId] = useState('')
   const [startTime, setStartTime] = useState('09:00')
   const [endTime, setEndTime] = useState('17:00')
@@ -32,6 +28,23 @@ function QuickAddShiftDialog({ isOpen, onClose, date, timezone, employee, locati
   const [hasBreak, setHasBreak] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+
+  const quickShifts = organization?.settings?.quick_shifts || []
+  const timeFormat = organization?.settings?.time_format || '12h'
+
+  // Helper function to format time strings (HH:MM) for display
+  const formatTimeForDisplay = (timeString: string) => {
+    // Convert HH:MM to ISO string for today's date to use with formatTimeLabel
+    const today = new Date().toISOString().split('T')[0]
+    const isoString = `${today}T${timeString}:00.000Z`
+    return formatTimeLabel(isoString, null, timeFormat)
+  }
+
+  useEffect(() => {
+    if (isOpen && !organization) {
+      fetchOrganization()
+    }
+  }, [isOpen, organization, fetchOrganization])
 
   useEffect(() => {
     if (!isOpen) return
@@ -264,14 +277,14 @@ function QuickAddShiftDialog({ isOpen, onClose, date, timezone, employee, locati
           </div>
 
           <div className="flex flex-wrap gap-2 text-xs">
-            {PRESETS.map((preset) => (
+            {quickShifts.map((preset) => (
               <button
                 type="button"
-                key={preset.label}
+                key={preset.id}
                 onClick={() => handlePreset(preset.start, preset.end)}
                 className="rounded-full border border-slate-700 px-3 py-1 font-semibold text-slate-100 transition hover:border-blue-400 hover:text-white"
               >
-                {preset.label}: {preset.start} – {preset.end}
+                {preset.label}: {formatTimeForDisplay(preset.start)} – {formatTimeForDisplay(preset.end)}
               </button>
             ))}
           </div>

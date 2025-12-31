@@ -23,12 +23,49 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist',
       sourcemap: false,
+      chunkSizeWarningLimit: 1000, // Increase warning limit to 1MB
       rollupOptions: {
         output: {
-          manualChunks: {
-            vendor: ['react', 'react-dom', 'react-router-dom'],
-            supabase: ['@supabase/supabase-js'],
-            ui: ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities']
+          manualChunks: (id) => {
+            // React core libraries
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'react-vendor'
+            }
+            
+            // Router
+            if (id.includes('react-router')) {
+              return 'router'
+            }
+            
+            // Supabase
+            if (id.includes('@supabase')) {
+              return 'supabase'
+            }
+            
+            // PDF renderer (likely large)
+            if (id.includes('@react-pdf/renderer')) {
+              return 'pdf-renderer'
+            }
+            
+            // DnD Kit
+            if (id.includes('@dnd-kit')) {
+              return 'dnd-kit'
+            }
+            
+            // TanStack Query
+            if (id.includes('@tanstack/react-query')) {
+              return 'react-query'
+            }
+            
+            // Zustand
+            if (id.includes('zustand')) {
+              return 'zustand'
+            }
+            
+            // Other node_modules
+            if (id.includes('node_modules')) {
+              return 'vendor'
+            }
           }
         }
       }

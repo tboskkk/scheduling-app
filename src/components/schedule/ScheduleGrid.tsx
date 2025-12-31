@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DndContext, type DragEndEvent, type DragOverEvent, type DragStartEvent, MouseSensor, TouchSensor, useDroppable, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -14,6 +14,7 @@ import { formatWeekRange, useScheduleStore } from './useScheduleStore'
 import type { GridEmployee, ShiftRecord, CoverageRequirement, EmployeeAvailability, EmployeeUnavailability, Schedule } from '../../types'
 import { validateSchedule, ConflictSeverity } from '../../lib/rules-engine'
 import { copyShiftsToNextWeek } from '../../lib/schedule-utils'
+import { ErrorDetailsModal } from './ErrorDetailsModal'
 
 type ScheduleGridProps = {
   organizationId: string
@@ -44,6 +45,15 @@ function ScheduleCell({ employee, dayIndex, dayDate, shifts, onOpenQuickAdd, ren
   const isDragTarget = dragState?.cellId === droppableId
   const isValidDrop = dragState?.isValid ?? true
 
+  const handleQuickAddClick = useCallback(() => {
+    onOpenQuickAdd(employee, dayDate)
+  }, [onOpenQuickAdd, employee, dayDate])
+
+  const handlePasteClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    onPaste?.(employee, dayDate)
+  }, [onPaste, employee, dayDate])
+
   return (
     <div
       ref={setNodeRef}
@@ -60,10 +70,7 @@ function ScheduleCell({ employee, dayIndex, dayDate, shifts, onOpenQuickAdd, ren
       {canPaste && (
         <button
           type="button"
-          onClick={(e) => {
-            e.stopPropagation()
-            onPaste?.(employee, dayDate)
-          }}
+          onClick={handlePasteClick}
           className="absolute right-1 top-1 z-30 rounded bg-blue-600 px-2 py-0.5 text-[10px] font-bold text-white opacity-0 shadow-sm transition group-hover:opacity-100"
           title="Paste shifts starting here"
         >
@@ -73,7 +80,7 @@ function ScheduleCell({ employee, dayIndex, dayDate, shifts, onOpenQuickAdd, ren
       {shifts.length === 0 && (
         <button
           type="button"
-          onClick={() => onOpenQuickAdd(employee, dayDate)}
+          onClick={handleQuickAddClick}
           className="flex h-full w-full items-center justify-center rounded-lg border border-dashed border-slate-800/80 bg-slate-950/70 text-xs font-semibold text-slate-400 transition hover:border-blue-500/60 hover:text-blue-100"
         >
           + Quick add shift
@@ -84,7 +91,7 @@ function ScheduleCell({ employee, dayIndex, dayDate, shifts, onOpenQuickAdd, ren
           {shifts.map((shift) => renderShiftCard(shift))}
           <button
             type="button"
-            onClick={() => onOpenQuickAdd(employee, dayDate)}
+            onClick={handleQuickAddClick}
             className="w-full rounded-md border border-dashed border-slate-800/80 px-2 py-2 text-[11px] font-semibold text-slate-300 transition hover:border-blue-500/60 hover:text-blue-100"
           >
             + Add shift
@@ -94,6 +101,9 @@ function ScheduleCell({ employee, dayIndex, dayDate, shifts, onOpenQuickAdd, ren
     </div>
   )
 }
+
+// Memoize ScheduleCell to prevent unnecessary re-renders
+const MemoizedScheduleCell = React.memo(ScheduleCell)
 
 function SortableEmployeeRow({ employee, children }: { employee: GridEmployee; children: (props: { attributes: any; listeners: any; isDragging: boolean }) => React.ReactNode }) {
   const {
@@ -118,6 +128,9 @@ function SortableEmployeeRow({ employee, children }: { employee: GridEmployee; c
     </div>
   )
 }
+
+// Memoize SortableEmployeeRow to prevent unnecessary re-renders
+const MemoizedSortableEmployeeRow = React.memo(SortableEmployeeRow)
 
 function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
   const queryClient = useQueryClient()
@@ -147,8 +160,12 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
   } = useScheduleStore()
   const [quickAddTarget, setQuickAddTarget] = useState<{ employee: GridEmployee | null; day: Date } | null>(null)
   const [editingShift, setEditingShift] = useState<ShiftRecord | null>(null)
+  const [showErrorDetails, setShowErrorDetails] = useState(false)
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [dragState, setDragState] = useState<{ cellId: string; isValid: boolean } | null>(null)
+  
+  // Debounce validation during drag operations
+  const dragValidationTimeoutRef = useRef<number | null>(null)
 
   const safeShifts = useMemo(() => (Array.isArray(shifts) ? shifts : []), [shifts])
   const employeeIdsWithShifts = useMemo(() => {
@@ -650,7 +667,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
     // No-op for now
   }
 
-  const handleDragOver = (event: DragOverEvent) => {
+  const handleDragOver = useCallback((event: DragOverEvent) => {
     const { active, over } = event
     if (!over || !active.data.current?.shift) {
       setDragState(null)
@@ -667,30 +684,52 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
     const isExplicitUnassign = overData.employeeId === null && (over.id as string).startsWith('cell-unassigned-')
     const targetEmployeeId = isExplicitUnassign ? null : overData.employeeId ?? shift.employee_id
 
-    const potentialShift = moveShiftToTarget(shift, targetEmployeeId, overData.dayIndex)
-
-    // Create temp shifts list
-    const tempShifts = safeShifts.map((s) => (s.id === potentialShift.id ? potentialShift : s))
-
-    const errors = validateSchedule(
-      tempShifts,
-      employees,
-      availabilityQuery.data ?? [],
-      unavailabilityQuery.data ?? [],
-      coverageQuery.data ?? [],
-      { 
-        timezone: timezone ?? 'UTC',
-        weekStart: weekStartDate
-      },
-    )
-
-    const hasHardBlock = errors.some((e) => e.shiftId === shift.id && e.severity === ConflictSeverity.HARD_BLOCK)
-
+    // Set immediate visual feedback without validation
     setDragState({
       cellId: over.id as string,
-      isValid: !hasHardBlock,
+      isValid: true, // Assume valid initially for smooth UX
     })
-  }
+
+    // Debounce expensive validation
+    if (dragValidationTimeoutRef.current) {
+      clearTimeout(dragValidationTimeoutRef.current)
+    }
+
+    dragValidationTimeoutRef.current = window.setTimeout(() => {
+      const potentialShift = moveShiftToTarget(shift, targetEmployeeId, overData.dayIndex!)
+
+      // Create temp shifts list
+      const tempShifts = safeShifts.map((s) => (s.id === potentialShift.id ? potentialShift : s))
+
+      const errors = validateSchedule(
+        tempShifts,
+        employees,
+        availabilityQuery.data ?? [],
+        unavailabilityQuery.data ?? [],
+        coverageQuery.data ?? [],
+        { 
+          timezone: timezone ?? 'UTC',
+          weekStart: weekStartDate
+        },
+      )
+
+      const hasHardBlock = errors.some((e) => e.shiftId === shift.id && e.severity === ConflictSeverity.HARD_BLOCK)
+
+      setDragState({
+        cellId: over.id as string,
+        isValid: !hasHardBlock,
+      })
+    }, 100) // 100ms debounce
+  }, [safeShifts, employees, availabilityQuery.data, unavailabilityQuery.data, coverageQuery.data, timezone, weekStartDate])
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (dragValidationTimeoutRef.current) {
+        clearTimeout(dragValidationTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const handleDragEnd = async (event: DragEndEvent) => {
     setDragState(null)
@@ -744,7 +783,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
     }
   }
 
-  const handleShiftClick = (shift: ShiftRecord, e: React.MouseEvent) => {
+  const handleShiftClick = useCallback((shift: ShiftRecord, e: React.MouseEvent) => {
     e.stopPropagation()
     if (e.shiftKey || isSelectionMode) {
       if (shift.id) toggleShiftSelection(shift.id)
@@ -755,7 +794,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
         setEditingShift(shift)
       }
     }
-  }
+  }, [isSelectionMode, toggleShiftSelection, selectedShiftIds.length, clearSelection])
 
   const handleDeleteSelected = async () => {
     if (!confirm(`Delete ${selectedShiftIds.length} shifts?`)) return
@@ -858,7 +897,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
     }
   }
 
-  const renderShiftCard = (shift: ShiftRecord) => {
+  const renderShiftCard = useCallback((shift: ShiftRecord) => {
     const shiftErrors = validationErrors.filter((e) => e.shiftId === shift.id)
     return (
       <ShiftCard
@@ -873,7 +912,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
         validationErrors={shiftErrors}
       />
     )
-  }
+  }, [validationErrors, roleLookup, timezone, timeFormat, selectedShiftIds, isSelectionMode, handleShiftClick])
 
   const handleShiftCreated = (shift: ShiftRecord) => {
     setShifts([...safeShifts, shift])
@@ -887,9 +926,9 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
     setShifts(safeShifts.filter((s) => s.id !== shiftId))
   }
 
-  const handleOpenQuickAdd = (employee: GridEmployee | null, day: Date) => {
+  const handleOpenQuickAdd = useCallback((employee: GridEmployee | null, day: Date) => {
     setQuickAddTarget({ employee, day })
-  }
+  }, [])
 
   const renderRow = (employee: GridEmployee | null, dragProps?: { attributes: any; listeners: any; isDragging: boolean }) => {
     const key = employee ? employee.id : 'unassigned'
@@ -899,7 +938,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
     return (
       <div
         key={key}
-        className={`grid grid-cols-[200px_repeat(7,minmax(140px,1fr))] border-t border-slate-800 bg-slate-950/60 ${isDragging ? 'opacity-50' : ''}`}
+        className={`grid grid-cols-[160px_repeat(7,minmax(120px,1fr))] border-t border-slate-800 bg-slate-950/60 ${isDragging ? 'opacity-50' : ''}`}
       >
         <div className="sticky left-0 z-10 flex items-center gap-2 border-r border-slate-800 bg-slate-900/80 px-3 py-3 text-sm font-semibold text-slate-100">
           {employee && attributes && listeners && (
@@ -922,7 +961,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
           </div>
         </div>
         {days.map((day) => (
-          <ScheduleCell
+          <MemoizedScheduleCell
             key={`${key}-${day.index}`}
             employee={employee}
             dayIndex={day.index}
@@ -951,88 +990,117 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
       onDragEnd={handleDragEnd}
     >
       <div className="min-w-0 space-y-4">
-        <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 text-sm text-slate-200">
+        <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-6 text-sm text-slate-200">
           <div className="flex items-start justify-between">
-            <div>
+            <div className="flex-1">
               <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Smart Grid</p>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 mb-4">
                 <h3 className="text-xl font-semibold text-white">Week view</h3>
                 {(hardBlockCount > 0 || softWarningCount > 0) && (
                   <div className="flex items-center gap-2">
                     {hardBlockCount > 0 && (
-                      <span className="flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-400 ring-1 ring-inset ring-red-500/20">
+                      <button
+                        onClick={() => setShowErrorDetails(true)}
+                        className="flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-400 ring-1 ring-inset ring-red-500/20 hover:bg-red-500/20 transition-colors"
+                      >
                         <span>🔴</span> {hardBlockCount} Error{hardBlockCount !== 1 ? 's' : ''}
-                      </span>
+                      </button>
                     )}
                     {softWarningCount > 0 && (
-                      <span className="flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-400 ring-1 ring-inset ring-amber-500/20">
+                      <button
+                        onClick={() => setShowErrorDetails(true)}
+                        className="flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-400 ring-1 ring-inset ring-amber-500/20 hover:bg-amber-500/20 transition-colors"
+                      >
                         <span>⚠️</span> {softWarningCount} Warning{softWarningCount !== 1 ? 's' : ''}
-                      </span>
+                      </button>
                     )}
                   </div>
                 )}
-                <button
-                  onClick={handleCopyLastWeek}
-                  className="ml-4 rounded-md bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700 hover:text-white"
-                  title="Copy shifts from the previous week"
-                >
-                  Copy Last Week
-                </button>
-                <button
-                  onClick={handleExportPDF}
-                  className="ml-2 rounded-md bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700 hover:text-white"
-                  title="Download PDF"
-                >
-                  Export PDF
-                </button>
-                <button
-                    onClick={handlePublish}
-                    className="ml-4 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
-                    disabled={hardBlockCount > 0}
-                >
-                    {schedule?.status === 'published' ? 'Publish Changes' : 'Publish Schedule'}
-                </button>
               </div>
-            </div>
-            <div className="flex items-center gap-3">
-              {clipboardShifts.length > 0 && (
-                <div className="flex items-center gap-2 rounded-md bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-300">
-                  <span>{clipboardShifts.length} copied</span>
+              
+              {/* Action Buttons - More Prominent */}
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Quick Actions:</span>
                   <button
-                    onClick={() => setClipboardShifts([])}
-                    className="text-slate-500 hover:text-slate-300"
-                    title="Clear clipboard"
+                    onClick={handleCopyLastWeek}
+                    className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 transition-colors shadow-sm"
+                    title="Copy all shifts from the previous week to this week"
                   >
-                    ✕
+                    <span>📋</span>
+                    Copy Last Week
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsSelectionMode(!isSelectionMode)
+                      if (isSelectionMode) clearSelection()
+                    }}
+                    className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors shadow-sm ${
+                      isSelectionMode
+                        ? 'bg-orange-600 text-white hover:bg-orange-500'
+                        : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
+                    }`}
+                    title={isSelectionMode ? 'Exit selection mode' : 'Select multiple shifts for bulk actions'}
+                  >
+                    <span>{isSelectionMode ? '✓' : '☑️'}</span>
+                    {isSelectionMode ? 'Done Selecting' : 'Select Shifts'}
                   </button>
                 </div>
-              )}
-              <button
-                onClick={() => {
-                  setIsSelectionMode(!isSelectionMode)
-                  if (isSelectionMode) clearSelection()
-                }}
-                className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                  isSelectionMode
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
-                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
-                }`}
-              >
-                {isSelectionMode ? 'Done Selecting' : 'Select Shifts'}
-              </button>
+                
+                <div className="h-6 w-px bg-slate-600"></div>
+                
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Export & Publish:</span>
+                  <button
+                    onClick={handleExportPDF}
+                    className="flex items-center gap-2 rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-600 transition-colors shadow-sm"
+                    title="Download schedule as PDF for printing or sharing"
+                  >
+                    <span>📄</span>
+                    Export PDF
+                  </button>
+                  <button
+                      onClick={handlePublish}
+                      className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                      disabled={hardBlockCount > 0}
+                      title={hardBlockCount > 0 ? 'Fix errors before publishing' : 'Make schedule visible to employees'}
+                  >
+                      <span>🚀</span>
+                      {schedule?.status === 'published' ? 'Publish Changes' : 'Publish Schedule'}
+                  </button>
+                </div>
+              </div>
             </div>
+            
+            {/* Clipboard Status - More Prominent */}
+            {clipboardShifts.length > 0 && (
+              <div className="flex items-center gap-2 rounded-lg bg-green-600/20 border border-green-500/30 px-4 py-2 text-sm font-medium text-green-300">
+                <span>📎</span>
+                <span>{clipboardShifts.length} shifts copied</span>
+                <button
+                  onClick={() => setClipboardShifts([])}
+                  className="ml-2 text-green-400 hover:text-green-200 font-bold"
+                  title="Clear clipboard"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
           </div>
-          <p className="mt-2 text-slate-300">
-            {isSelectionMode
-              ? 'Click shifts to select them. Use the toolbar at the bottom for actions.'
-              : 'Columns are dates in the location timezone. Shift+Click to select multiple shifts.'}
-          </p>
+          
+          <div className="mt-4 pt-4 border-t border-slate-700">
+            <p className="text-sm text-slate-300 leading-relaxed">
+              {isSelectionMode
+                ? '💡 Click individual shifts to select them, then use the toolbar at the bottom for bulk actions like copy or delete.'
+                : '💡 Click any empty cell to add a shift. Shift+Click to select multiple shifts. Drag shifts to move them between days or employees.'}
+            </p>
+          </div>
         </div>
 
         <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/60 shadow-xl shadow-black/30">
           <div className="overflow-auto">
-            <div className="min-w-[1080px]">
-              <div className="grid grid-cols-[200px_repeat(7,minmax(140px,1fr))] border-b border-slate-800 bg-slate-900/90 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
+            <div className="min-w-fit">
+              <div className="grid grid-cols-[160px_repeat(7,minmax(120px,1fr))] border-b border-slate-800 bg-slate-900/90 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
                 <div className="sticky left-0 top-0 z-20 border-r border-slate-800 bg-slate-900/90 px-3 py-3 text-slate-200">
                   Employee / Hours
                 </div>
@@ -1063,9 +1131,9 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
                   )}
                   <SortableContext items={orderedRows.map((e) => e.id)} strategy={verticalListSortingStrategy}>
                     {orderedRows.map((employee) => (
-                      <SortableEmployeeRow key={employee.id} employee={employee}>
+                      <MemoizedSortableEmployeeRow key={employee.id} employee={employee}>
                         {(dragProps) => renderRow(employee, dragProps)}
-                      </SortableEmployeeRow>
+                      </MemoizedSortableEmployeeRow>
                     ))}
                   </SortableContext>
                 </div>
@@ -1121,6 +1189,13 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
           roles={rolesQuery.data ?? []}
           onUpdated={handleShiftUpdated}
           onDeleted={handleShiftDeleted}
+        />
+
+        <ErrorDetailsModal
+          isOpen={showErrorDetails}
+          onClose={() => setShowErrorDetails(false)}
+          errors={validationErrors}
+          title="Schedule Issues"
         />
       </div>
     </DndContext>

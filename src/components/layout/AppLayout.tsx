@@ -8,6 +8,9 @@ import type { LocationRecord } from '../LocationsManager'
 import { formatWeekRange, useScheduleStore } from '../schedule/useScheduleStore'
 import { useOrganizationStore } from '../../lib/useOrganizationStore'
 import { OfflineIndicator } from '../OfflineIndicator'
+import { ErrorDetailsModal } from '../schedule/ErrorDetailsModal'
+import { ConflictSeverity } from '../../lib/rules-engine'
+import { useGlobalValidation } from '../../hooks/useGlobalValidation'
 
 interface AppLayoutProps {
   session: Session
@@ -22,8 +25,15 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false)
   const [selectedLocationId, setSelectedLocationId] = useState('')
+  const [showErrorDetails, setShowErrorDetails] = useState(false)
   const { weekStartIso, shiftWeek, goToToday, setTimezone, setOrganizationSettings } = useScheduleStore()
   const { organization, fetchOrganization } = useOrganizationStore()
+
+  // Use global validation hook for organization-wide error counts
+  const { validationErrors } = useGlobalValidation({
+    organizationId: managerProfile?.organization_id ?? null,
+    enabled: Boolean(managerProfile?.organization_id)
+  })
 
   useEffect(() => {
     fetchOrganization()
@@ -150,8 +160,15 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
 
   const weekRangeLabel = useMemo(() => formatWeekRange(weekStartIso, activeTimezone), [weekStartIso, activeTimezone])
 
-  const warningCount = 0
-  const hardBlockCount = 0
+  // Compute error counts from validation errors
+  const warningCount = useMemo(() => 
+    validationErrors.filter(error => error.severity === ConflictSeverity.SOFT_WARNING).length, 
+    [validationErrors]
+  )
+  const hardBlockCount = useMemo(() => 
+    validationErrors.filter(error => error.severity === ConflictSeverity.HARD_BLOCK).length, 
+    [validationErrors]
+  )
 
   const handleWeekChange = (delta: number) => shiftWeek(delta)
 
@@ -171,7 +188,7 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
       <OfflineIndicator />
       <div className="flex min-h-screen flex-col md:flex-row">
         <aside
-          className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-slate-800/80 bg-slate-900/90 p-4 shadow-2xl transition-transform duration-200 md:relative md:z-auto md:bg-slate-900/70 md:shadow-none ${isMobileNavOpen ? 'translate-x-0 w-72' : '-translate-x-full w-72 md:translate-x-0'} ${isSidebarCollapsed ? 'md:w-16 md:items-center md:px-3' : 'md:w-64 md:px-4 md:pr-6'}`}
+          className={`fixed top-0 left-0 h-screen z-40 flex flex-col border-r border-slate-800/80 bg-slate-900/90 p-4 shadow-2xl transition-transform duration-200 md:z-auto md:bg-slate-900/70 md:shadow-none ${isMobileNavOpen ? 'translate-x-0 w-72' : '-translate-x-full w-72 md:translate-x-0'} ${isSidebarCollapsed ? 'md:w-16 md:items-center md:px-3' : 'md:w-64 md:px-4 md:pr-6'}`}
           style={{ minWidth: isSidebarCollapsed ? '4rem' : undefined }}
         >
           <div className="flex items-center justify-between gap-2">
@@ -197,7 +214,7 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
             </div>
           </div>
 
-          <div className="mt-6 space-y-1">
+          <div className="mt-6 flex-1 overflow-y-auto space-y-1">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
@@ -214,35 +231,35 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
                 {!isSidebarCollapsed && <span>{item.label}</span>}
               </NavLink>
             ))}
+
+            {!isSidebarCollapsed && (
+              <div className="mt-8 space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Location</p>
+                <div className="rounded-lg border border-slate-700 bg-slate-900/80 p-3 text-xs text-slate-200">
+                  {isManagerLoading && <p>Loading manager…</p>}
+                  {!isManagerLoading && !managerProfile && <p>Add an organization to pick a location.</p>}
+                  {managerProfile && (
+                    <select
+                      value={selectedLocationId}
+                      onChange={(e) => handleLocationChange(e.target.value)}
+                      disabled={areLocationsLoading || !locations?.length}
+                      className="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500 disabled:opacity-60"
+                    >
+                      {!selectedLocationId && <option value="">Select a location</option>}
+                      {(locations ?? []).map((loc) => (
+                        <option key={loc.id} value={loc.id}>
+                          {loc.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {!isSidebarCollapsed && (
-            <div className="mt-8 space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Location</p>
-              <div className="rounded-lg border border-slate-700 bg-slate-900/80 p-3 text-xs text-slate-200">
-                {isManagerLoading && <p>Loading manager…</p>}
-                {!isManagerLoading && !managerProfile && <p>Add an organization to pick a location.</p>}
-                {managerProfile && (
-                  <select
-                    value={selectedLocationId}
-                    onChange={(e) => handleLocationChange(e.target.value)}
-                    disabled={areLocationsLoading || !locations?.length}
-                    className="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500 disabled:opacity-60"
-                  >
-                    {!selectedLocationId && <option value="">Select a location</option>}
-                    {(locations ?? []).map((loc) => (
-                      <option key={loc.id} value={loc.id}>
-                        {loc.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-            </div>
-          )}
-
-          {!isSidebarCollapsed && (
-            <div className="mt-auto pt-6">
+            <div className="flex-shrink-0 pt-6">
               <div className="rounded-lg border border-slate-800 bg-slate-900/70 p-3 text-xs text-slate-200">
                 <p className="font-semibold text-white">{session.user.email}</p>
                 <p className="text-slate-400">Signed in</p>
@@ -280,9 +297,9 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
           />
         )}
 
-        <main className="flex-1 bg-slate-950/60 md:ml-0">
-          <header className="sticky top-0 z-20 border-b border-slate-800 bg-slate-900/80 backdrop-blur">
-            <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6">
+        <main className={`flex-1 bg-slate-950/60 transition-all duration-200 ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
+          <header className="fixed top-0 left-0 right-0 z-30 border-b border-slate-800 bg-slate-900/80 backdrop-blur transition-all duration-200" style={{ marginLeft: isSidebarCollapsed ? '4rem' : '16rem' }}>
+            <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6" style={{ marginLeft: 0 }}>
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
                 <button
                   type="button"
@@ -323,17 +340,23 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <div className="inline-flex items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-200">
+                <button
+                  onClick={() => setShowErrorDetails(true)}
+                  className="inline-flex items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-200 hover:bg-amber-500/20 transition-colors"
+                >
                   ⚠️ <span>{warningCount}</span>
-                </div>
-                <div className="inline-flex items-center gap-2 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-200">
+                </button>
+                <button
+                  onClick={() => setShowErrorDetails(true)}
+                  className="inline-flex items-center gap-2 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-200 hover:bg-red-500/20 transition-colors"
+                >
                   🔴 <span>{hardBlockCount}</span>
-                </div>
+                </button>
               </div>
             </div>
           </header>
 
-          <div className="mx-auto max-w-6xl px-4 py-6 md:px-6">
+          <div className="mx-auto max-w-7xl px-4 py-6 pt-28 md:px-6 xl:max-w-none xl:px-8">
             <div className="mb-4 block rounded-lg border border-blue-500/30 bg-blue-500/10 p-3 text-xs text-blue-100 md:hidden">
               Best experienced on desktop. Mobile is viewable, but full Smart Grid editing is desktop-first.
             </div>
@@ -341,6 +364,14 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
           </div>
         </main>
       </div>
+
+      {/* Error Details Modal */}
+      <ErrorDetailsModal
+        isOpen={showErrorDetails}
+        onClose={() => setShowErrorDetails(false)}
+        errors={validationErrors}
+        title="All Schedule Issues"
+      />
     </div>
   )
 }

@@ -1,19 +1,29 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense, lazy } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { supabase } from './lib/supabaseClient'
 import './App.css'
-import AuthPage from './pages/AuthPage'
-import DashboardPage from './pages/DashboardPage'
-import SchedulePage from './pages/SchedulePage'
-import EmployeesPage from './pages/EmployeesPage'
-import LocationsPage from './pages/LocationsPage'
-import SettingsPage from './pages/SettingsPage'
-import PrivacyPage from './pages/PrivacyPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import AppLayout from './components/layout/AppLayout'
+import LoadingSpinner from './components/LoadingSpinner'
 import type { ManagerProfile } from './types'
 import { analytics } from './lib/analytics'
+
+// Lazy load page components with preloading for critical routes
+const AuthPage = lazy(() => import('./pages/AuthPage'))
+const DashboardPage = lazy(() => import('./pages/DashboardPage'))
+const SchedulePage = lazy(() => import('./pages/SchedulePage'))
+const EmployeesPage = lazy(() => import('./pages/EmployeesPage'))
+const LocationsPage = lazy(() => import('./pages/LocationsPage'))
+const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage'))
+
+// Preload critical routes after initial load
+const preloadCriticalRoutes = () => {
+  // Preload dashboard and schedule pages as they're most commonly accessed
+  import('./pages/DashboardPage')
+  import('./pages/SchedulePage')
+}
 
 function LocationTracker() {
   const location = useLocation()
@@ -35,6 +45,11 @@ function App() {
       const { data, error } = await supabase.auth.getSession()
       if (error) return
       setSession(data.session ?? null)
+      
+      // Preload critical routes if user is authenticated
+      if (data.session) {
+        setTimeout(preloadCriticalRoutes, 100)
+      }
     }
 
     bootstrapSession()
@@ -42,6 +57,9 @@ function App() {
       setSession(nextSession ?? null)
       if (event === 'SIGNED_OUT') {
         setManagerProfile(null)
+      } else if (event === 'SIGNED_IN' && nextSession) {
+        // Preload critical routes on sign in
+        setTimeout(preloadCriticalRoutes, 100)
       }
     })
 
@@ -105,48 +123,50 @@ function App() {
   return (
     <BrowserRouter>
       <LocationTracker />
-      <Routes>
-        <Route path="/login" element={<AuthPage mode="login" session={session} />} />
-        <Route path="/register" element={<AuthPage mode="register" session={session} />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
+      <Suspense fallback={<LoadingSpinner size="lg" className="min-h-screen" />}>
+        <Routes>
+          <Route path="/login" element={<AuthPage mode="login" session={session} />} />
+          <Route path="/register" element={<AuthPage mode="register" session={session} />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
 
-        <Route element={<ProtectedRoute session={session} />}>
-          <Route
-            element={
-              session ? (
-                <AppLayout
-                  session={session}
-                  managerProfile={managerProfile}
-                  onSignOut={handleSignOut}
-                  isManagerLoading={isFetchingManager}
-                />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          >
+          <Route element={<ProtectedRoute session={session} />}>
             <Route
-              path="/dashboard"
               element={
-                <DashboardPage
-                  managerProfile={managerProfile}
-                  isFetchingManager={isFetchingManager}
-                  onOrganizationCreated={handleOrganizationCreated}
-                  userEmail={session?.user?.email ?? ''}
-                />
+                session ? (
+                  <AppLayout
+                    session={session}
+                    managerProfile={managerProfile}
+                    onSignOut={handleSignOut}
+                    isManagerLoading={isFetchingManager}
+                  />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
               }
-            />
-            <Route path="/schedule/:locationId" element={<SchedulePage managerProfile={managerProfile} />} />
-            <Route path="/schedule" element={<SchedulePage managerProfile={managerProfile} />} />
-            <Route path="/employees" element={<EmployeesPage managerProfile={managerProfile} />} />
-            <Route path="/locations" element={<LocationsPage managerProfile={managerProfile} />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route index element={<Navigate to="/dashboard" replace />} />
+            >
+              <Route
+                path="/dashboard"
+                element={
+                  <DashboardPage
+                    managerProfile={managerProfile}
+                    isFetchingManager={isFetchingManager}
+                    onOrganizationCreated={handleOrganizationCreated}
+                    userEmail={session?.user?.email ?? ''}
+                  />
+                }
+              />
+              <Route path="/schedule/:locationId" element={<SchedulePage managerProfile={managerProfile} />} />
+              <Route path="/schedule" element={<SchedulePage managerProfile={managerProfile} />} />
+              <Route path="/employees" element={<EmployeesPage managerProfile={managerProfile} />} />
+              <Route path="/locations" element={<LocationsPage managerProfile={managerProfile} />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route index element={<Navigate to="/dashboard" replace />} />
+            </Route>
           </Route>
-        </Route>
 
-        <Route path="*" element={<Navigate to={session ? '/dashboard' : '/login'} replace />} />
-      </Routes>
+          <Route path="*" element={<Navigate to={session ? '/dashboard' : '/login'} replace />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   )
 }
