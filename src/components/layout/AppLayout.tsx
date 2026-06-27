@@ -393,14 +393,29 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
               </div>
 
               {isOnSchedule && (
-                <button
-                  onClick={() => setShowErrorDetails(true)}
-                  className="inline-flex items-center gap-2.5 rounded-md border border-slate-700 bg-slate-950/40 px-3 py-2 text-xs font-semibold transition hover:border-slate-500"
-                >
-                  <span className="text-red-300">🔴 {hardBlockCount}</span>
-                  <span className="text-slate-600">·</span>
-                  <span className="text-amber-300">⚠️ {warningCount}</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={selectedLocationId}
+                    onChange={(e) => handleLocationChange(e.target.value)}
+                    disabled={areLocationsLoading || !locations?.length}
+                    className="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-semibold text-white outline-none transition focus:border-blue-500 disabled:opacity-60"
+                  >
+                    {!selectedLocationId && <option value="">Select location</option>}
+                    {(locations ?? []).map((loc) => (
+                      <option key={loc.id} value={loc.id}>
+                        {loc.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => setShowErrorDetails(true)}
+                    className="inline-flex items-center gap-2.5 rounded-md border border-slate-700 bg-slate-950/40 px-3 py-2 text-xs font-semibold transition hover:border-slate-500"
+                  >
+                    <span className="text-red-300">🔴 {hardBlockCount}</span>
+                    <span className="text-slate-600">·</span>
+                    <span className="text-amber-300">⚠️ {warningCount}</span>
+                  </button>
+                </div>
               )}
             </div>
           </header>
