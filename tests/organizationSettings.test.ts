@@ -4,15 +4,14 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { validateSchedule, ConflictSeverity } from '../src/lib/rules-engine'
 import { OrganizationSettings } from '../src/types'
 
-const supabaseUrl = process.env.VITE_SUPABASE_PROJECT_URL!
-const publishableKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY!
-const secretKey = process.env.SUPABASE_SECRET_KEY
-
-if (!supabaseUrl || !publishableKey || !secretKey) {
-  throw new Error(
-    'Set VITE_SUPABASE_PROJECT_URL, VITE_SUPABASE_PUBLISHABLE_KEY, and SUPABASE_SECRET_KEY to run organization settings tests.',
-  )
-}
+const supabaseUrl = process.env.VITE_SUPABASE_PROJECT_URL ?? ''
+const publishableKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? ''
+const secretKey = process.env.SUPABASE_SECRET_KEY ?? ''
+const hasIntegrationCreds = !!(
+  process.env.VITE_SUPABASE_PROJECT_URL &&
+  process.env.VITE_SUPABASE_PUBLISHABLE_KEY &&
+  process.env.SUPABASE_SECRET_KEY
+)
 
 type ManagerContext = {
   email: string
@@ -70,7 +69,7 @@ async function cleanup() {
   await Promise.all(createdUserIds.map((id) => admin.auth.admin.deleteUser(id)))
 }
 
-describe('Organization Settings', () => {
+describe.skipIf(!hasIntegrationCreds)('Organization Settings', () => {
   let manager: ManagerContext
 
   beforeAll(async () => {

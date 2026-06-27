@@ -2,15 +2,14 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { randomUUID } from 'crypto'
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 
-const supabaseUrl = process.env.VITE_SUPABASE_PROJECT_URL!
-const publishableKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY!
-const secretKey = process.env.SUPABASE_SECRET_KEY
-
-if (!supabaseUrl || !publishableKey || !secretKey) {
-  throw new Error(
-    'Set VITE_SUPABASE_PROJECT_URL, VITE_SUPABASE_PUBLISHABLE_KEY, and SUPABASE_SECRET_KEY to run organization isolation tests.',
-  )
-}
+const supabaseUrl = process.env.VITE_SUPABASE_PROJECT_URL ?? ''
+const publishableKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? ''
+const secretKey = process.env.SUPABASE_SECRET_KEY ?? ''
+const hasIntegrationCreds = !!(
+  process.env.VITE_SUPABASE_PROJECT_URL &&
+  process.env.VITE_SUPABASE_PUBLISHABLE_KEY &&
+  process.env.SUPABASE_SECRET_KEY
+)
 
 type ManagerContext = {
   email: string
@@ -70,7 +69,7 @@ async function cleanup() {
   await Promise.all(createdUserIds.map((id) => admin.auth.admin.deleteUser(id)))
 }
 
-describe('Property 21: Organization Data Isolation', () => {
+describe.skipIf(!hasIntegrationCreds)('Property 21: Organization Data Isolation', () => {
   let managerA: ManagerContext
   let managerB: ManagerContext
 

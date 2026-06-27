@@ -14,7 +14,7 @@ describe('Property 18: Schedule Publishing Guards', () => {
             schedule_id: fc.option(fc.uuid(), { nil: undefined }),
             employee_id: fc.uuid(),
             role_id: fc.uuid(),
-            start_datetime: fc.date({ min: new Date('2020-01-01'), max: new Date('2030-01-01') }).map(d => d.toISOString()),
+            start_datetime: fc.date({ min: new Date('2020-01-01'), max: new Date('2030-01-01'), noInvalidDate: true }).map(d => d.toISOString()),
             duration: fc.integer({ min: 1, max: 8 })
           }),
           { minLength: 1, maxLength: 5 }

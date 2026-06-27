@@ -2,15 +2,14 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { randomUUID } from 'crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-const supabaseUrl = process.env.VITE_SUPABASE_PROJECT_URL!
-const publishableKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY!
-const secretKey = process.env.SUPABASE_SECRET_KEY
-
-if (!supabaseUrl || !publishableKey || !secretKey) {
-  throw new Error(
-    'Set VITE_SUPABASE_PROJECT_URL, VITE_SUPABASE_PUBLISHABLE_KEY, and SUPABASE_SECRET_KEY to run location round-trip tests.',
-  )
-}
+const supabaseUrl = process.env.VITE_SUPABASE_PROJECT_URL ?? ''
+const publishableKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? ''
+const secretKey = process.env.SUPABASE_SECRET_KEY ?? ''
+const hasIntegrationCreds = !!(
+  process.env.VITE_SUPABASE_PROJECT_URL &&
+  process.env.VITE_SUPABASE_PUBLISHABLE_KEY &&
+  process.env.SUPABASE_SECRET_KEY
+)
 
 type ManagerContext = {
   email: string
@@ -70,7 +69,7 @@ async function cleanup() {
   await Promise.all(createdUserIds.map((id) => admin.auth.admin.deleteUser(id)))
 }
 
-describe('Property 1: Location Data Round-Trip', () => {
+describe.skipIf(!hasIntegrationCreds)('Property 1: Location Data Round-Trip', () => {
   let manager: ManagerContext
 
   beforeAll(async () => {
