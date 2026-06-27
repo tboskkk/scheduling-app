@@ -142,7 +142,7 @@ function RequestsPage({ managerProfile }: Props) {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-4xl mx-auto">
+    <div className="p-4 sm:p-6 space-y-6 max-w-4xl mx-auto">
       <div>
         <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Manager</p>
         <h1 className="mt-1 text-2xl font-semibold text-white">Employee Requests</h1>
@@ -153,14 +153,14 @@ function RequestsPage({ managerProfile }: Props) {
         <button
           type="button"
           onClick={() => setMainTab('time-off')}
-          className={`rounded-md px-4 py-1.5 text-sm font-semibold transition ${mainTab === 'time-off' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:text-white'}`}
+          className={`rounded-md px-4 py-2 text-sm font-semibold transition ${mainTab === 'time-off' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:text-white'}`}
         >
           Time Off {pendingTor.length > 0 && <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] text-white">{pendingTor.length}</span>}
         </button>
         <button
           type="button"
           onClick={() => setMainTab('shift-trades')}
-          className={`rounded-md px-4 py-1.5 text-sm font-semibold transition ${mainTab === 'shift-trades' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:text-white'}`}
+          className={`rounded-md px-4 py-2 text-sm font-semibold transition ${mainTab === 'shift-trades' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:text-white'}`}
         >
           Shift Trades {pendingStr.length > 0 && <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] text-white">{pendingStr.length}</span>}
         </button>
@@ -175,7 +175,7 @@ function RequestsPage({ managerProfile }: Props) {
                 key={t}
                 type="button"
                 onClick={() => setTorTab(t)}
-                className={`rounded-md px-3 py-1 text-xs font-semibold transition ${torTab === t ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
+                className={`rounded-md px-3 py-2 text-xs font-semibold transition ${torTab === t ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
               >
                 {t === 'pending' ? `Pending (${pendingTor.length})` : `History (${historyTor.length})`}
               </button>
@@ -252,7 +252,7 @@ function RequestsPage({ managerProfile }: Props) {
                 key={t}
                 type="button"
                 onClick={() => setStrTab(t)}
-                className={`rounded-md px-3 py-1 text-xs font-semibold transition ${strTab === t ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
+                className={`rounded-md px-3 py-2 text-xs font-semibold transition ${strTab === t ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
               >
                 {t === 'pending' ? `Awaiting Approval (${pendingStr.length})` : `History (${historyStr.length})`}
               </button>

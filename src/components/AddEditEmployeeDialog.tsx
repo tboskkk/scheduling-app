@@ -594,7 +594,7 @@ function AddEditEmployeeDialog({
                           setAvailabilityError(error instanceof Error ? error.message : 'Unable to add availability')
                         }
                       }}
-                      className="rounded-lg border border-emerald-500/60 px-3 py-1 text-xs font-semibold text-emerald-100 transition hover:border-emerald-300 disabled:border-slate-600 disabled:text-slate-500 disabled:cursor-not-allowed"
+                      className="rounded-lg border border-emerald-500/60 px-3 py-2 text-xs font-semibold text-emerald-100 transition hover:border-emerald-300 disabled:border-slate-600 disabled:text-slate-500 disabled:cursor-not-allowed"
                     >
                       Add availability
                     </button>
@@ -699,7 +699,7 @@ function AddEditEmployeeDialog({
                           <button
                             type="button"
                             onClick={() => deleteAvailabilityEntry.mutate(window.id)}
-                            className="rounded-lg border border-red-500/60 px-2 py-1 text-[12px] font-semibold text-red-100 transition hover:border-red-400"
+                            className="rounded-lg border border-red-500/60 px-3 py-2 text-xs font-semibold text-red-100 transition hover:border-red-400"
                           >
                             Remove
                           </button>
@@ -725,7 +725,7 @@ function AddEditEmployeeDialog({
                           setAvailabilityError(error instanceof Error ? error.message : 'Unable to add unavailability')
                         }
                       }}
-                      className="rounded-lg border border-amber-500/60 px-3 py-1 text-xs font-semibold text-amber-100 transition hover:border-amber-300"
+                      className="rounded-lg border border-amber-500/60 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:border-amber-300"
                     >
                       Add block
                     </button>
@@ -763,7 +763,7 @@ function AddEditEmployeeDialog({
                           <button
                             type="button"
                             onClick={() => deleteUnavailabilityEntry.mutate(item.id)}
-                            className="rounded-lg border border-red-500/60 px-2 py-1 text-[12px] font-semibold text-red-100 transition hover:border-red-400"
+                            className="rounded-lg border border-red-500/60 px-3 py-2 text-xs font-semibold text-red-100 transition hover:border-red-400"
                           >
                             Remove
                           </button>

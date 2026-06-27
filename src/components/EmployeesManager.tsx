@@ -261,19 +261,19 @@ function EmployeesManager({ organizationId }: Props) {
                   <div className="flex flex-wrap gap-2 text-xs">
                     <button
                       onClick={() => openEditEmployeeDialog(employee)}
-                      className="rounded-lg border border-slate-700 px-3 py-1 font-semibold text-slate-100 transition hover:border-slate-500"
+                      className="rounded-lg border border-slate-700 px-3 py-2 font-semibold text-slate-100 transition hover:border-slate-500"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => openEditEmployeeAvailability(employee)}
-                      className="rounded-lg border border-emerald-500/60 px-3 py-1 font-semibold text-emerald-100 transition hover:border-emerald-400"
+                      className="rounded-lg border border-emerald-500/60 px-3 py-2 font-semibold text-emerald-100 transition hover:border-emerald-400"
                     >
                       Availability
                     </button>
                     <button
                       onClick={() => deleteEmployee.mutate(employee.id)}
-                      className="rounded-lg border border-red-500/60 px-3 py-1 font-semibold text-red-100 transition hover:border-red-400"
+                      className="rounded-lg border border-red-500/60 px-3 py-2 font-semibold text-red-100 transition hover:border-red-400"
                     >
                       Delete
                     </button>

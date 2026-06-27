@@ -249,7 +249,7 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
               <button
                 type="button"
                 onClick={() => setIsMobileNavOpen(false)}
-                className="rounded-lg border border-slate-700 px-2 py-1 text-xs font-semibold text-slate-200 hover:border-slate-500 md:hidden"
+                className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 hover:border-slate-500 md:hidden"
               >
                 Close
               </button>
