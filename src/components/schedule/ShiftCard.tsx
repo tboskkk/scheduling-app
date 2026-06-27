@@ -17,12 +17,13 @@ type ShiftCardProps = {
   timezone: string | null
   isSelected?: boolean
   isSelectionMode?: boolean
+  isHighlighted?: boolean
   timeFormat?: TimeDisplayFormat
   onClick?: (shift: ShiftRecord, e: React.MouseEvent) => void
   validationErrors?: ValidationError[]
 }
 
-function ShiftCard({ shift, role, timezone, isSelected, isSelectionMode, onClick, validationErrors = [], timeFormat = '12h' }: ShiftCardProps) {
+function ShiftCard({ shift, role, timezone, isSelected, isSelectionMode, isHighlighted, onClick, validationErrors = [], timeFormat = '12h' }: ShiftCardProps) {
   const rawDuration = hoursBetween(shift.start_datetime, shift.end_datetime)
   
   let breakHours = 0
@@ -52,7 +53,9 @@ function ShiftCard({ shift, role, timezone, isSelected, isSelectionMode, onClick
   const style = transform ? { transform: CSS.Translate.toString(transform) } : undefined
   
   let borderClass = 'border-slate-700/80'
-  if (hasHardBlock) {
+  if (isHighlighted) {
+    borderClass = 'border-blue-400 ring-2 ring-blue-400 ring-offset-1 ring-offset-slate-950'
+  } else if (hasHardBlock) {
     borderClass = 'border-red-500 ring-1 ring-red-500'
   } else if (hasSoftWarning) {
     borderClass = 'border-amber-500 ring-1 ring-amber-500'
@@ -80,7 +83,8 @@ function ShiftCard({ shift, role, timezone, isSelected, isSelectionMode, onClick
       {...listeners}
       onClick={handleClick}
       title={tooltipText}
-      className={`group relative w-full cursor-grab rounded-lg border bg-slate-900/85 px-3 py-2 text-[12px] text-slate-100 shadow-sm shadow-black/30 transition ${borderClass} ${cardActiveClass} ${isSelectionMode ? 'cursor-pointer' : ''}`}
+      data-shift-id={shift.id}
+      className={`group relative w-full cursor-grab rounded-lg border bg-slate-900/85 px-3 py-2 text-[12px] text-slate-100 shadow-sm shadow-black/30 transition ${borderClass} ${cardActiveClass} ${isHighlighted ? 'animate-pulse' : ''} ${isSelectionMode ? 'cursor-pointer' : ''}`}
     >
       {(hasHardBlock || hasSoftWarning) && (
         <div className="absolute -right-1.5 -top-1.5 z-30 flex h-4 w-4 items-center justify-center rounded-full bg-slate-900 shadow-sm ring-1 ring-slate-950">

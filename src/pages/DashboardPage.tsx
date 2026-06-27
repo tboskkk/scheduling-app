@@ -9,7 +9,7 @@ import { useOrganizationStore } from '../lib/useOrganizationStore'
 import { formatWeekRange } from '../components/schedule/useScheduleStore'
 import OnboardingWizard from '../components/OnboardingWizard'
 import { ErrorDetailsModal } from '../components/schedule/ErrorDetailsModal'
-import { validateSchedule } from '../lib/rules-engine'
+import { ConflictSeverity } from '../lib/rules-engine'
 import { useGlobalValidation } from '../hooks/useGlobalValidation'
 import { supabase } from '../lib/supabaseClient'
 
@@ -95,31 +95,48 @@ function DashboardPage({
     })
   }, [locations, employees, shifts, availability, unavailability, coverage, settings])
 
-  // Compute location-specific errors
+  // Map shiftId → location_id and requirementId → location_id for error attribution
+  const shiftLocationMap = useMemo(() => new Map(shifts.map(s => [s.id, s.location_id])), [shifts])
+  const reqLocationMap = useMemo(() => new Map(coverage.map(r => [r.id, r.location_id])), [coverage])
+
+  // Per-location error counts derived directly from globalErrors (same source as header counts)
+  const locationErrorCounts = useMemo(() => {
+    const counts: Record<string, { hardBlocks: number; softWarnings: number }> = {}
+    for (const err of globalErrors) {
+      const locId = err.shiftId
+        ? shiftLocationMap.get(err.shiftId)
+        : err.meta?.requirementId
+          ? reqLocationMap.get(err.meta.requirementId)
+          : undefined
+      if (!locId) continue
+      if (!counts[locId]) counts[locId] = { hardBlocks: 0, softWarnings: 0 }
+      if (err.severity === ConflictSeverity.HARD_BLOCK) counts[locId].hardBlocks++
+      else counts[locId].softWarnings++
+    }
+    return counts
+  }, [globalErrors, shiftLocationMap, reqLocationMap])
+
+  const globalHardBlockCount = useMemo(
+    () => globalErrors.filter(e => e.severity === ConflictSeverity.HARD_BLOCK).length,
+    [globalErrors]
+  )
+  const globalSoftWarningCount = useMemo(
+    () => globalErrors.filter(e => e.severity === ConflictSeverity.SOFT_WARNING).length,
+    [globalErrors]
+  )
+
+  // Errors scoped to the location whose modal is open
   const locationErrors = useMemo(() => {
-    if (!selectedLocationErrors || !locations || !employees || !shifts) return []
-    
-    const locationShifts = shifts.filter(shift => shift.location_id === selectedLocationErrors.locationId)
-    const locationCoverage = coverage.filter(c => c.location_id === selectedLocationErrors.locationId)
-    const location = locations.find(loc => loc.id === selectedLocationErrors.locationId)
-    
-    return validateSchedule(
-      locationShifts,
-      employees,
-      availability,
-      unavailability,
-      locationCoverage,
-      {
-        weekStart: weekStartDate,
-        weekStartDay: settings.week_start_day,
-        maxWeeklyHours: settings.weekly_overtime_threshold,
-        maxDailyHours: settings.daily_overtime_threshold,
-        minRestPeriodHours: settings.min_rest_period_hours,
-        enableCaliforniaRules: settings.enable_california_rules,
-        timezone: location?.timezone || undefined,
-      }
-    )
-  }, [selectedLocationErrors, locations, employees, shifts, availability, unavailability, coverage, settings, weekStartDate])
+    if (!selectedLocationErrors) return []
+    return globalErrors.filter(err => {
+      const locId = err.shiftId
+        ? shiftLocationMap.get(err.shiftId)
+        : err.meta?.requirementId
+          ? reqLocationMap.get(err.meta.requirementId)
+          : undefined
+      return locId === selectedLocationErrors.locationId
+    })
+  }, [selectedLocationErrors, globalErrors, shiftLocationMap, reqLocationMap])
 
   const hasData = Boolean(summary && locations?.length)
 
@@ -211,9 +228,9 @@ function DashboardPage({
                   onClick={() => setShowGlobalErrors(true)}
                   className="inline-flex items-center gap-2 rounded-md border border-slate-700 bg-slate-950/40 px-2.5 py-1 text-[11px] font-semibold transition hover:border-slate-500"
                 >
-                  <span className="text-red-300">🔴 {summary.hardBlockCount}</span>
+                  <span className="text-red-300">🔴 {globalHardBlockCount}</span>
                   <span className="text-slate-600">·</span>
-                  <span className="text-amber-300">⚠️ {summary.softWarningCount}</span>
+                  <span className="text-amber-300">⚠️ {globalSoftWarningCount}</span>
                 </button>
               </div>
               <div className="mt-3 space-y-2">
@@ -224,7 +241,7 @@ function DashboardPage({
                       <p className="text-[12px] text-slate-400">{loc.shiftCount} shifts</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      {loc.hardBlocks === 0 ? (
+                      {(locationErrorCounts[loc.locationId]?.hardBlocks ?? 0) === 0 ? (
                         <span className="rounded-full bg-emerald-500/10 px-2 py-[2px] text-[11px] font-semibold text-emerald-200 ring-1 ring-emerald-500/30">Ready</span>
                       ) : (
                         <span className="rounded-full bg-red-500/10 px-2 py-[2px] text-[11px] font-semibold text-red-200 ring-1 ring-red-500/30">Blocked</span>
@@ -233,8 +250,8 @@ function DashboardPage({
                         onClick={() => setSelectedLocationErrors({ locationId: loc.locationId, locationName: loc.locationName })}
                         className="inline-flex items-center gap-1 text-[11px] font-semibold transition hover:opacity-80"
                       >
-                        <span className="rounded-full bg-red-500/10 px-2 py-[2px] text-red-200 ring-1 ring-red-500/30">{loc.hardBlocks}</span>
-                        <span className="rounded-full bg-amber-500/10 px-2 py-[2px] text-amber-200 ring-1 ring-amber-500/30">{loc.softWarnings}</span>
+                        <span className="rounded-full bg-red-500/10 px-2 py-[2px] text-red-200 ring-1 ring-red-500/30">{locationErrorCounts[loc.locationId]?.hardBlocks ?? 0}</span>
+                        <span className="rounded-full bg-amber-500/10 px-2 py-[2px] text-amber-200 ring-1 ring-amber-500/30">{locationErrorCounts[loc.locationId]?.softWarnings ?? 0}</span>
                       </button>
                     </div>
                   </div>

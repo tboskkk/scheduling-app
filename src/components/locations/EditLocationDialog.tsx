@@ -326,8 +326,8 @@ function EditLocationDialog({ isOpen, onClose, location, onUpdated, onDeleted }:
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-8">
-      <div className="w-full max-w-2xl rounded-2xl border border-slate-700 bg-slate-950 p-5 shadow-2xl shadow-black/50 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-4 sm:py-8">
+      <div className="w-full max-w-2xl rounded-2xl border border-slate-700 bg-slate-950 p-5 shadow-2xl shadow-black/50 max-h-[90dvh] overflow-y-auto">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Edit Location</p>
@@ -337,7 +337,7 @@ function EditLocationDialog({ isOpen, onClose, location, onUpdated, onDeleted }:
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md border border-slate-700 px-2 py-1 text-[12px] font-semibold text-slate-200 transition hover:border-slate-500"
+            className="rounded-md border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-500"
           >
             Close
           </button>

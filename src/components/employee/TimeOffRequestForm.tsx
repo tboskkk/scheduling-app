@@ -92,20 +92,20 @@ function TimeOffRequestForm({ employeeProfile, onSaved, onCancel }: Props) {
         </div>
       )}
 
-      <div className="flex gap-2 pt-1">
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:opacity-60"
-        >
-          {isSubmitting ? 'Submitting…' : 'Submit request'}
-        </button>
+      <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row">
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-slate-500"
+          className="w-full rounded-lg border border-slate-700 px-4 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-slate-500 sm:w-auto"
         >
           Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:opacity-60 sm:w-auto"
+        >
+          {isSubmitting ? 'Submitting…' : 'Submit request'}
         </button>
       </div>
     </form>

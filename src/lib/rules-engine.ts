@@ -423,71 +423,101 @@ function checkCoverage(
     }
     
     const sortedPoints = Array.from(points).sort((a, b) => a - b)
-    
+
+    // First pass: classify each sub-interval
+    type Interval = { p1: number; p2: number; count: number; breakShiftIds: string[] }
+    const gapIntervals: Interval[] = []
+
     for (let i = 0; i < sortedPoints.length - 1; i++) {
       const p1 = sortedPoints[i]
-      const p2 = sortedPoints[i+1]
+      const p2 = sortedPoints[i + 1]
       const midPoint = (p1 + p2) / 2
-      
-      // Count shifts active at midPoint
+
+      const countWithBreaks = relevantShifts.filter(s => {
+        const sStart = new Date(s.start_datetime).getTime()
+        const sEnd = new Date(s.end_datetime).getTime()
+        return sStart <= midPoint && sEnd >= midPoint
+      }).length
+
       const count = relevantShifts.filter(s => {
         const sStart = new Date(s.start_datetime).getTime()
         const sEnd = new Date(s.end_datetime).getTime()
-        
-        // Basic check: is the shift active?
-        const isActive = sStart <= midPoint && sEnd >= midPoint
-        if (!isActive) return false
-
-        // Break check: is the employee on break?
+        if (sStart > midPoint || sEnd < midPoint) return false
         if (s.break_start_datetime && s.break_end_datetime) {
           const bStart = new Date(s.break_start_datetime).getTime()
           const bEnd = new Date(s.break_end_datetime).getTime()
           if (midPoint >= bStart && midPoint < bEnd) return false
         }
-
         return true
       }).length
-      
+
       if (count < req.min_employees) {
-        errors.push({
-          id: `cov-${req.id}-${p1}`,
-          severity: ConflictSeverity.SOFT_WARNING,
-          message: `Coverage missing: ${count}/${req.min_employees} for role`,
-          ruleType: 'COVERAGE_GAP',
-          meta: {
-            requirementId: req.id,
-            startTime: new Date(p1).toISOString(),
-            endTime: new Date(p2).toISOString(),
-            missingCount: req.min_employees - count
-          }
-        })
+        // Which shifts are on break in this interval and are contributing to the gap?
+        const breakShiftIds = countWithBreaks >= req.min_employees
+          ? relevantShifts
+              .filter(s => {
+                if (!s.break_start_datetime || !s.break_end_datetime || !s.id) return false
+                const bStart = new Date(s.break_start_datetime).getTime()
+                const bEnd = new Date(s.break_end_datetime).getTime()
+                return bStart < p2 && bEnd > p1
+              })
+              .map(s => s.id as string)
+          : []
+        gapIntervals.push({ p1, p2, count, breakShiftIds })
+      }
+    }
 
-        // Find shifts that are on break during this gap
-        const shiftsOnBreak = relevantShifts.filter(s => {
-            if (!s.break_start_datetime || !s.break_end_datetime) return false
-            const bStart = new Date(s.break_start_datetime).getTime()
-            const bEnd = new Date(s.break_end_datetime).getTime()
-            // Check if break overlaps with the gap interval [p1, p2]
-            // Gap is [p1, p2]. Break is [bStart, bEnd].
-            // Overlap if bStart < p2 && bEnd > p1
-            return bStart < p2 && bEnd > p1
-        })
+    // Second pass: merge consecutive intervals of the same kind into contiguous gap periods.
+    // "Same kind" means: both break-caused (breakShiftIds non-empty) with the same shift IDs,
+    // OR both understaffing gaps (no break to blame). Adjacent different kinds start a new period.
+    type GapPeriod = { p1: number; p2: number; minCount: number; breakShiftIds: Set<string> }
+    const periods: GapPeriod[] = []
 
-        for (const s of shiftsOnBreak) {
-             errors.push({
-                id: `cov-break-${req.id}-${p1}-${s.id}`,
-                shiftId: s.id,
-                severity: ConflictSeverity.SOFT_WARNING,
-                message: `Break causes coverage gap (${count}/${req.min_employees})`,
-                ruleType: 'COVERAGE_GAP',
-                meta: {
-                    requirementId: req.id,
-                    startTime: new Date(p1).toISOString(),
-                    endTime: new Date(p2).toISOString(),
-                    missingCount: req.min_employees - count
-                }
-             })
+    for (const iv of gapIntervals) {
+      const ivBreakKey = [...iv.breakShiftIds].sort().join(',')
+      const last = periods[periods.length - 1]
+      const lastBreakKey = last ? [...last.breakShiftIds].sort().join(',') : null
+
+      if (last && last.p2 === iv.p1 && lastBreakKey === ivBreakKey) {
+        last.p2 = iv.p2
+        last.minCount = Math.min(last.minCount, iv.count)
+      } else {
+        periods.push({
+          p1: iv.p1,
+          p2: iv.p2,
+          minCount: iv.count,
+          breakShiftIds: new Set(iv.breakShiftIds),
+        })
+      }
+    }
+
+    // Third pass: emit one error per merged gap period.
+    for (const period of periods) {
+      const startIso = new Date(period.p1).toISOString()
+      const endIso = new Date(period.p2).toISOString()
+      const meta = { requirementId: req.id, startTime: startIso, endTime: endIso, missingCount: req.min_employees - period.minCount }
+
+      if (period.breakShiftIds.size > 0) {
+        // Gap is break-caused: emit one warning per culprit shift (has Jump →), skip the generic warning
+        for (const shiftId of period.breakShiftIds) {
+          errors.push({
+            id: `cov-break-${req.id}-${period.p1}-${shiftId}`,
+            shiftId,
+            severity: ConflictSeverity.SOFT_WARNING,
+            message: `Break causes coverage gap (${period.minCount}/${req.min_employees})`,
+            ruleType: 'COVERAGE_GAP',
+            meta,
+          })
         }
+      } else {
+        // Genuine understaffing: one warning for the whole contiguous gap period
+        errors.push({
+          id: `cov-${req.id}-${period.p1}`,
+          severity: ConflictSeverity.SOFT_WARNING,
+          message: `Coverage missing: ${period.minCount}/${req.min_employees} for role`,
+          ruleType: 'COVERAGE_GAP',
+          meta,
+        })
       }
     }
   }

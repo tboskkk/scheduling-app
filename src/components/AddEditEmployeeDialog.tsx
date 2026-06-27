@@ -369,7 +369,7 @@ function AddEditEmployeeDialog({
 
         <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
           {activeTab === 'details' ? (
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-100">Name</label>
                 <input
@@ -571,7 +571,7 @@ function AddEditEmployeeDialog({
               )}
             </form>
           ) : (
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-6">
               {(availabilityError || availabilityFetchError) && (
                 <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
                   {availabilityError || availabilityFetchError?.message}

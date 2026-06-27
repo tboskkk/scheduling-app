@@ -10,7 +10,8 @@ import { useOrganizationStore } from '../../lib/useOrganizationStore'
 import { OfflineIndicator } from '../OfflineIndicator'
 import { ErrorDetailsModal } from '../schedule/ErrorDetailsModal'
 import { ConflictSeverity } from '../../lib/rules-engine'
-import { useGlobalValidation } from '../../hooks/useGlobalValidation'
+import { computeFixSuggestions } from '../../lib/fix-suggestions'
+import type { AddShiftParams } from '../../lib/fix-suggestions'
 
 interface AppLayoutProps {
   session: Session
@@ -26,14 +27,8 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false)
   const [selectedLocationId, setSelectedLocationId] = useState('')
   const [showErrorDetails, setShowErrorDetails] = useState(false)
-  const { weekStartIso, shiftWeek, goToToday, setTimezone, setOrganizationSettings } = useScheduleStore()
+  const { weekStartIso, shiftWeek, goToToday, setTimezone, setOrganizationSettings, validationErrors, employees, shifts, availability } = useScheduleStore()
   const { organization, fetchOrganization } = useOrganizationStore()
-
-  // Use global validation hook for organization-wide error counts
-  const { validationErrors } = useGlobalValidation({
-    organizationId: managerProfile?.organization_id ?? null,
-    enabled: Boolean(managerProfile?.organization_id)
-  })
 
   useEffect(() => {
     fetchOrganization()
@@ -200,9 +195,14 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
     validationErrors.filter(error => error.severity === ConflictSeverity.SOFT_WARNING).length, 
     [validationErrors]
   )
-  const hardBlockCount = useMemo(() => 
-    validationErrors.filter(error => error.severity === ConflictSeverity.HARD_BLOCK).length, 
+  const hardBlockCount = useMemo(() =>
+    validationErrors.filter(error => error.severity === ConflictSeverity.HARD_BLOCK).length,
     [validationErrors]
+  )
+
+  const fixSuggestions = useMemo(
+    () => computeFixSuggestions(validationErrors, employees, shifts, availability),
+    [validationErrors, employees, shifts, availability]
   )
 
   const isOnSchedule = location.pathname.startsWith('/schedule')
@@ -345,12 +345,12 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
         )}
 
         <main className={`flex-1 bg-slate-950/60 transition-all duration-200 ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
-          <header className="fixed top-0 left-0 right-0 z-30 border-b border-slate-800 bg-slate-900/80 backdrop-blur transition-all duration-200" style={{ marginLeft: isSidebarCollapsed ? '4rem' : '16rem' }}>
-            <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6" style={{ marginLeft: 0 }}>
+          <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-900/80 backdrop-blur">
+            <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
                 <button
                   type="button"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-700 text-base md:hidden"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-700 text-base md:hidden"
                   onClick={() => setIsMobileNavOpen(true)}
                   aria-label="Open navigation"
                 >
@@ -362,7 +362,7 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
                     <button
                       type="button"
                       onClick={() => handleWeekChange(-1)}
-                      className="rounded-md border border-slate-700 px-2 py-2 text-xs transition hover:border-slate-500"
+                      className="rounded-md border border-slate-700 px-2.5 py-2.5 text-xs transition hover:border-slate-500"
                       aria-label="Previous week"
                     >
                       ◀
@@ -374,7 +374,7 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
                     <button
                       type="button"
                       onClick={() => handleWeekChange(1)}
-                      className="rounded-md border border-slate-700 px-2 py-2 text-xs transition hover:border-slate-500"
+                      className="rounded-md border border-slate-700 px-2.5 py-2.5 text-xs transition hover:border-slate-500"
                       aria-label="Next week"
                     >
                       ▶
@@ -382,7 +382,7 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
                     <button
                       type="button"
                       onClick={handleSelectToday}
-                      className="rounded-md border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-100 transition hover:border-blue-400 hover:text-white"
+                      className="rounded-md border border-slate-700 px-3 py-2.5 text-xs font-semibold text-slate-100 transition hover:border-blue-400 hover:text-white"
                     >
                       Today
                     </button>
@@ -409,7 +409,7 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
                   </select>
                   <button
                     onClick={() => setShowErrorDetails(true)}
-                    className="inline-flex items-center gap-2.5 rounded-md border border-slate-700 bg-slate-950/40 px-3 py-2 text-xs font-semibold transition hover:border-slate-500"
+                    className="inline-flex items-center gap-2.5 rounded-md border border-slate-700 bg-slate-950/40 px-3 py-2.5 text-xs font-semibold transition hover:border-slate-500"
                   >
                     <span className="text-red-300">🔴 {hardBlockCount}</span>
                     <span className="text-slate-600">·</span>
@@ -420,12 +420,7 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
             </div>
           </header>
 
-          <div className="mx-auto max-w-7xl px-4 py-6 pt-28 md:px-6 xl:max-w-none xl:px-8">
-            {isOnSchedule && (
-              <div className="mb-4 block rounded-lg border border-blue-500/30 bg-blue-500/10 p-3 text-xs text-blue-100 md:hidden">
-                Best experienced on desktop. Mobile is viewable, but full Smart Grid editing is desktop-first.
-              </div>
-            )}
+          <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 xl:max-w-none xl:px-8">
             <Outlet />
           </div>
         </main>
@@ -437,6 +432,26 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
         onClose={() => setShowErrorDetails(false)}
         errors={validationErrors}
         title="All Schedule Issues"
+        onShiftClick={(shiftId) => {
+          setShowErrorDetails(false)
+          const target = `/schedule/${selectedLocationId}`
+          if (!location.pathname.startsWith('/schedule')) {
+            navigate(`${target}?highlight=${shiftId}`)
+          } else {
+            navigate(`${location.pathname}?highlight=${shiftId}`, { replace: true })
+          }
+        }}
+        suggestions={fixSuggestions}
+        onAddShift={(params: AddShiftParams) => {
+          setShowErrorDetails(false)
+          const target = `/schedule/${selectedLocationId}`
+          const qs = `?fixDate=${encodeURIComponent(params.startTime)}&fixEmployee=${encodeURIComponent(params.employeeId)}`
+          if (!location.pathname.startsWith('/schedule')) {
+            navigate(`${target}${qs}`)
+          } else {
+            navigate(`${location.pathname}${qs}`, { replace: true })
+          }
+        }}
       />
     </div>
   )

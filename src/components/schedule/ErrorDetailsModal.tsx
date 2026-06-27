@@ -1,18 +1,88 @@
 import type { ValidationError } from '../../lib/rules-engine'
 import { ConflictSeverity } from '../../lib/rules-engine'
+import type { AddShiftParams, FixSuggestion } from '../../lib/fix-suggestions'
 
 interface ErrorDetailsModalProps {
   isOpen: boolean
   onClose: () => void
   errors: ValidationError[]
   title?: string
+  onShiftClick?: (shiftId: string) => void
+  suggestions?: Map<string, FixSuggestion[]>
+  onAddShift?: (params: AddShiftParams) => void
 }
 
-export function ErrorDetailsModal({ isOpen, onClose, errors, title = "Schedule Issues" }: ErrorDetailsModalProps) {
+function formatCoverageTime(iso: string | undefined): string {
+  if (!iso) return ''
+  return new Date(iso).toLocaleString([], {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
+export function ErrorDetailsModal({ isOpen, onClose, errors, title = "Schedule Issues", onShiftClick, suggestions, onAddShift }: ErrorDetailsModalProps) {
   if (!isOpen) return null
 
   const hardBlocks = errors.filter(e => e.severity === ConflictSeverity.HARD_BLOCK)
   const softWarnings = errors.filter(e => e.severity === ConflictSeverity.SOFT_WARNING)
+
+  function renderError(error: ValidationError, color: 'red' | 'amber') {
+    const c = color === 'red'
+      ? { border: 'border-red-500/20', bg: 'bg-red-500/5', hoverBorder: 'hover:border-red-400/50', hoverBg: 'hover:bg-red-500/10', text: 'text-red-200', sub: 'text-red-400/70', jump: 'text-red-400/60 hover:text-red-300', fix: 'text-red-300 hover:text-red-100 border-red-500/30 hover:border-red-400/60' }
+      : { border: 'border-amber-500/20', bg: 'bg-amber-500/5', hoverBorder: 'hover:border-amber-400/50', hoverBg: 'hover:bg-amber-500/10', text: 'text-amber-200', sub: 'text-amber-400/70', jump: 'text-amber-400/60 hover:text-amber-300', fix: 'text-amber-300 hover:text-amber-100 border-amber-500/30 hover:border-amber-400/60' }
+
+    const isClickable = Boolean(error.shiftId && onShiftClick)
+    const coverageStart = error.ruleType === 'COVERAGE_GAP' ? formatCoverageTime(error.meta?.startTime) : null
+    const errorSuggestions = error.ruleType === 'COVERAGE_GAP' && !error.shiftId
+      ? (suggestions?.get(error.id) ?? [])
+      : []
+
+    return (
+      <div key={error.id} className={`rounded-md border ${c.border} ${c.bg} p-3`}>
+        <div
+          onClick={() => error.shiftId && onShiftClick?.(error.shiftId)}
+          className={isClickable ? `cursor-pointer ${c.hoverBorder} ${c.hoverBg} -m-3 p-3 rounded-md` : ''}
+        >
+          <div className="flex items-start justify-between gap-2">
+            <p className={`text-sm ${c.text}`}>{error.message}</p>
+            {isClickable && (
+              <span className={`shrink-0 text-xs ${c.jump}`}>Jump →</span>
+            )}
+          </div>
+          {coverageStart && (
+            <p className={`mt-0.5 text-xs ${c.sub}`}>{coverageStart}</p>
+          )}
+          <p className={`mt-1 text-xs ${c.sub}`}>Rule: {error.ruleType}</p>
+        </div>
+
+        {errorSuggestions.length > 0 && onAddShift && (
+          <div className="mt-2 border-t border-slate-700/50 pt-2">
+            <p className={`mb-1.5 text-xs font-medium ${c.sub}`}>Available to schedule:</p>
+            <div className="flex flex-wrap gap-1.5">
+              {errorSuggestions.map(s => (
+                <button
+                  key={s.employeeId}
+                  onClick={() => onAddShift({
+                    startTime: error.meta?.startTime ?? '',
+                    endTime: error.meta?.endTime,
+                    employeeId: s.employeeId,
+                    employeeName: s.employeeName,
+                    requirementId: error.meta?.requirementId,
+                  })}
+                  className={`rounded border px-2 py-0.5 text-xs ${c.fix} transition-colors`}
+                >
+                  + {s.employeeName}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -28,8 +98,8 @@ export function ErrorDetailsModal({ isOpen, onClose, errors, title = "Schedule I
             </svg>
           </button>
         </div>
-        
-        <div className="max-h-96 overflow-y-auto p-6">
+
+        <div className="max-h-[28rem] overflow-y-auto p-6">
           {errors.length === 0 ? (
             <p className="text-center text-slate-400">No issues found</p>
           ) : (
@@ -41,15 +111,7 @@ export function ErrorDetailsModal({ isOpen, onClose, errors, title = "Schedule I
                     Errors ({hardBlocks.length})
                   </h3>
                   <div className="space-y-2">
-                    {hardBlocks.map((error) => (
-                      <div key={error.id} className="rounded-md border border-red-500/20 bg-red-500/5 p-3">
-                        <p className="text-sm text-red-200">{error.message}</p>
-                        <p className="mt-1 text-xs text-red-400/70">Rule: {error.ruleType}</p>
-                        {error.shiftId && (
-                          <p className="mt-1 text-xs text-red-400/70">Shift ID: {error.shiftId}</p>
-                        )}
-                      </div>
-                    ))}
+                    {hardBlocks.map((error) => renderError(error, 'red'))}
                   </div>
                 </div>
               )}
@@ -61,22 +123,14 @@ export function ErrorDetailsModal({ isOpen, onClose, errors, title = "Schedule I
                     Warnings ({softWarnings.length})
                   </h3>
                   <div className="space-y-2">
-                    {softWarnings.map((error) => (
-                      <div key={error.id} className="rounded-md border border-amber-500/20 bg-amber-500/5 p-3">
-                        <p className="text-sm text-amber-200">{error.message}</p>
-                        <p className="mt-1 text-xs text-amber-400/70">Rule: {error.ruleType}</p>
-                        {error.shiftId && (
-                          <p className="mt-1 text-xs text-amber-400/70">Shift ID: {error.shiftId}</p>
-                        )}
-                      </div>
-                    ))}
+                    {softWarnings.map((error) => renderError(error, 'amber'))}
                   </div>
                 </div>
               )}
             </div>
           )}
         </div>
-        
+
         <div className="border-t border-slate-700 px-6 py-4">
           <button
             onClick={onClose}

@@ -45,7 +45,7 @@ function AuthPage({ mode = 'login', session, userRole }: AuthPageProps) {
   }, [session, userRole, navigate])
 
   const headline = useMemo(() => {
-    if (authView === 'register') return 'Create your manager account'
+    if (authView === 'register') return 'Create your account'
     return 'Welcome back'
   }, [authView])
 
@@ -97,9 +97,9 @@ function AuthPage({ mode = 'login', session, userRole }: AuthPageProps) {
       <div className="w-full max-w-4xl rounded-2xl border border-slate-800 bg-slate-900/80 p-8 shadow-2xl shadow-black/40">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Schedule Builder</p>
-            <h1 className="mt-2 text-3xl font-semibold text-white">Supabase Auth</h1>
-            <p className="mt-1 text-sm text-slate-300">Email/password auth with live session awareness.</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Staff scheduling</p>
+            <h1 className="mt-2 text-3xl font-semibold text-white">Schedule+</h1>
+            <p className="mt-1 text-sm text-slate-300">Your work schedule, anywhere.</p>
           </div>
           <div className="inline-flex gap-2 rounded-full bg-slate-800 p-1 shadow-inner shadow-slate-950/40">
             <button
@@ -122,20 +122,20 @@ function AuthPage({ mode = 'login', session, userRole }: AuthPageProps) {
         <div className="mt-8 grid gap-6 md:grid-cols-[1.1fr_0.9fr]">
           <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-slate-800 bg-slate-900/70 p-6">
             <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Access</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Account</p>
               <h2 className="mt-2 text-xl font-semibold text-white">{headline}</h2>
-              <p className="mt-1 text-sm text-slate-300">Sessions refresh automatically via Supabase.</p>
+              <p className="mt-1 text-sm text-slate-300">Sign in to view your schedule or manage your team.</p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-200">Work email</label>
+              <label className="text-sm font-medium text-slate-200">Email</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
-                placeholder="jane.manager@example.com"
+                placeholder="you@example.com"
               />
             </div>
 
@@ -174,16 +174,24 @@ function AuthPage({ mode = 'login', session, userRole }: AuthPageProps) {
           </form>
 
           <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-900/60 p-6 text-sm text-slate-200">
-            <div className="flex items-center gap-3">
-              <span className="h-2 w-2 rounded-full bg-emerald-400" aria-hidden />
-              Supabase Auth with live session listener
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">What you can do</p>
+            <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-4 space-y-2">
+              <p className="text-xs font-semibold text-slate-300">Employees</p>
+              <ul className="space-y-1.5 text-xs text-slate-400">
+                <li className="flex items-start gap-2"><span className="mt-0.5 text-emerald-400">✓</span> View your upcoming shifts</li>
+                <li className="flex items-start gap-2"><span className="mt-0.5 text-emerald-400">✓</span> Request time off</li>
+                <li className="flex items-start gap-2"><span className="mt-0.5 text-emerald-400">✓</span> Trade shifts with coworkers</li>
+              </ul>
             </div>
-            <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-4 text-xs text-slate-300">
-              Sessions stay in sync via onAuthStateChange. RLS keeps data scoped to the manager's organization.
+            <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-4 space-y-2">
+              <p className="text-xs font-semibold text-slate-300">Managers</p>
+              <ul className="space-y-1.5 text-xs text-slate-400">
+                <li className="flex items-start gap-2"><span className="mt-0.5 text-blue-400">✓</span> Build and publish weekly schedules</li>
+                <li className="flex items-start gap-2"><span className="mt-0.5 text-blue-400">✓</span> Manage employees and locations</li>
+                <li className="flex items-start gap-2"><span className="mt-0.5 text-blue-400">✓</span> Review time-off and shift-trade requests</li>
+              </ul>
             </div>
-            <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-4 text-xs text-slate-300">
-              Use the sidebar after signing in to access dashboard, schedule, employees, and locations.
-            </div>
+            <p className="text-xs text-slate-500">Don't have an account? Ask your manager to get you set up.</p>
           </div>
         </div>
       </div>

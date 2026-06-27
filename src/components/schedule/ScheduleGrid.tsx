@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { DndContext, type DragEndEvent, type DragOverEvent, type DragStartEvent, MouseSensor, TouchSensor, useDroppable, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -14,6 +15,8 @@ import { formatWeekRange, useScheduleStore } from './useScheduleStore'
 import type { GridEmployee, ShiftRecord, CoverageRequirement, EmployeeAvailability, EmployeeUnavailability, Schedule } from '../../types'
 import { validateSchedule, ConflictSeverity } from '../../lib/rules-engine'
 import { copyShiftsToNextWeek } from '../../lib/schedule-utils'
+import { computeFixSuggestions } from '../../lib/fix-suggestions'
+import type { AddShiftParams } from '../../lib/fix-suggestions'
 import { ErrorDetailsModal } from './ErrorDetailsModal'
 
 type ScheduleGridProps = {
@@ -158,12 +161,16 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
     setSchedule,
     validate,
   } = useScheduleStore()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [flashShiftId, setFlashShiftId] = useState<string | null>(null)
+
   const [quickAddTarget, setQuickAddTarget] = useState<{ employee: GridEmployee | null; day: Date } | null>(null)
   const [editingShift, setEditingShift] = useState<ShiftRecord | null>(null)
   const [showErrorDetails, setShowErrorDetails] = useState(false)
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [dragState, setDragState] = useState<{ cellId: string; isValid: boolean } | null>(null)
-  
+  const [mobileSelectedDay, setMobileSelectedDay] = useState(0)
+
   // Debounce validation during drag operations
   const dragValidationTimeoutRef = useRef<number | null>(null)
 
@@ -365,11 +372,27 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
 
     if (error) {
         setError(error.message)
-    } else {
-        setSchedule(data as Schedule)
-        queryClient.invalidateQueries({ queryKey: ['schedule-meta'] })
-        alert(`Schedule published (Version ${nextVersion})`)
+        return
     }
+
+    // Link all shifts in this week to the schedule so employees can see them.
+    // Without this, schedule_id stays NULL and the employee RLS blocks all access.
+    const { error: linkError } = await supabase
+      .from('shifts')
+      .update({ schedule_id: data.id })
+      .eq('location_id', locationId)
+      .gte('start_datetime', weekStartDate.toISOString())
+      .lt('start_datetime', weekEndIso)
+
+    if (linkError) {
+      setError(linkError.message)
+      return
+    }
+
+    setSchedule(data as Schedule)
+    queryClient.invalidateQueries({ queryKey: ['schedule-meta'] })
+    queryClient.invalidateQueries({ queryKey: ['schedule-shifts', organizationId, locationId, weekStartIso, timezone] })
+    alert(`Schedule published (Version ${nextVersion})`)
   }
 
   const employeesQuery = useQuery<GridEmployee[]>({
@@ -460,9 +483,38 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
     },
   })
 
+  // Fetch approved time-off requests that overlap the current week and convert
+  // them to EmployeeUnavailability shape so the rules engine flags them as HARD_BLOCK.
+  const approvedTimeOffQuery = useQuery<EmployeeUnavailability[]>({
+    queryKey: ['schedule-approved-time-off', organizationId, weekStartIso, weekEndIso],
+    enabled: Boolean(organizationId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('time_off_requests')
+        .select('id, employee_id, organization_id, start_date, end_date')
+        .eq('organization_id', organizationId)
+        .eq('status', 'approved')
+        .gte('end_date', weekStartIso.slice(0, 10))
+        .lte('start_date', weekEndIso.slice(0, 10))
+
+      if (error) throw new Error(error.message)
+      return (data ?? []).map((r) => ({
+        id: `tor-${r.id}`,
+        organization_id: r.organization_id as string,
+        employee_id: r.employee_id as string,
+        start_datetime: `${r.start_date}T00:00:00.000Z`,
+        end_datetime: `${r.end_date}T23:59:59.999Z`,
+      }))
+    },
+  })
+
   useEffect(() => {
-    if (unavailabilityQuery.data) setUnavailability(unavailabilityQuery.data)
-  }, [unavailabilityQuery.data, setUnavailability])
+    const merged = [
+      ...(unavailabilityQuery.data ?? []),
+      ...(approvedTimeOffQuery.data ?? []),
+    ]
+    setUnavailability(merged)
+  }, [unavailabilityQuery.data, approvedTimeOffQuery.data, setUnavailability])
 
   const shiftsQuery = useQuery<ShiftRecord[]>({
     queryKey: ['schedule-shifts', organizationId, locationId, weekStartIso, timezone],
@@ -495,6 +547,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
     employeesQuery.data,
     availabilityQuery.data,
     unavailabilityQuery.data,
+    approvedTimeOffQuery.data,
     coverageQuery.data,
     timezone,
     weekStartIso,
@@ -505,6 +558,44 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
   useEffect(() => {
     setIsLoading(isLocationLoading || employeesQuery.isLoading || shiftsQuery.isLoading || rolesQuery.isLoading || coverageQuery.isLoading)
   }, [isLocationLoading, employeesQuery.isLoading, shiftsQuery.isLoading, rolesQuery.isLoading, coverageQuery.isLoading, setIsLoading])
+
+  // Scroll to + flash a highlighted shift when the ?highlight= URL param is set.
+  const highlightParam = searchParams.get('highlight')
+  useEffect(() => {
+    if (!highlightParam || !shifts.length) return
+    setFlashShiftId(highlightParam)
+    const timer = setTimeout(() => {
+      const el = document.querySelector(`[data-shift-id="${highlightParam}"]`)
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      setSearchParams((prev) => { prev.delete('highlight'); return prev }, { replace: true })
+      setTimeout(() => setFlashShiftId(null), 2000)
+    }, 150)
+    return () => clearTimeout(timer)
+  }, [highlightParam, shifts.length, setSearchParams])
+
+  // Open QuickAddShift when the ?fixDate=ISO&fixEmployee=UUID params are set (navigated from AppLayout modal).
+  const fixDateParam = searchParams.get('fixDate')
+  const fixEmployeeParam = searchParams.get('fixEmployee')
+  useEffect(() => {
+    if (!fixDateParam || !employees.length) return
+    const emp = fixEmployeeParam ? (employees.find(e => e.id === fixEmployeeParam) ?? null) : null
+    const day = new Date(fixDateParam)
+    setQuickAddTarget({ employee: emp, day })
+    setSearchParams((prev) => { prev.delete('fixDate'); prev.delete('fixEmployee'); return prev }, { replace: true })
+  }, [fixDateParam, fixEmployeeParam, employees, setSearchParams])
+
+  // Suggestions for coverage gap auto-fix
+  const fixSuggestions = useMemo(
+    () => computeFixSuggestions(validationErrors, employees, shifts, availabilityQuery.data ?? []),
+    [validationErrors, employees, shifts, availabilityQuery.data]
+  )
+
+  const handleAddShift = useCallback((params: AddShiftParams) => {
+    const emp = employees.find(e => e.id === params.employeeId) ?? null
+    const day = params.startTime ? new Date(params.startTime) : new Date()
+    setShowErrorDetails(false)
+    setQuickAddTarget({ employee: emp, day })
+  }, [employees])
 
   useEffect(() => {
     const firstError =
@@ -560,6 +651,54 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
   )
 
   const dayKeys = useMemo(() => days.map((day) => dayFormatter.format(day.date)), [dayFormatter, days])
+
+  // Group all coverage-gap warnings (both understaffing and break-caused) by day column index.
+  type DayGapEntry = {
+    id: string
+    startTime: string
+    endTime?: string
+    count: number
+    min: number
+    isBreakCaused: boolean
+    shiftId?: string
+  }
+  const gapsByDay = useMemo(() => {
+    const map = new Map<number, DayGapEntry[]>()
+    for (const err of validationErrors) {
+      if (err.ruleType !== 'COVERAGE_GAP' || !err.meta?.startTime) continue
+      const key = dayFormatter.format(new Date(err.meta.startTime))
+      const idx = dayKeys.indexOf(key)
+      if (idx < 0) continue
+      const entry: DayGapEntry = {
+        id: err.id,
+        startTime: err.meta.startTime,
+        endTime: err.meta.endTime,
+        count: err.meta.missingCount !== undefined
+          ? (err.meta as { missingCount: number }).missingCount
+          : 0,
+        min: 0,
+        isBreakCaused: Boolean(err.shiftId),
+        shiftId: err.shiftId,
+      }
+      // Parse count from message: "Coverage missing: 1/2" or "Break causes coverage gap (1/2)"
+      const m = err.message.match(/(\d+)\/(\d+)/)
+      if (m) { entry.count = Number(m[1]); entry.min = Number(m[2]) }
+      const list = map.get(idx) ?? []
+      list.push(entry)
+      map.set(idx, list)
+    }
+    return map
+  }, [validationErrors, dayFormatter, dayKeys])
+
+  const gapDayIndexes = useMemo(() => new Set(gapsByDay.keys()), [gapsByDay])
+
+  function formatGapTime(iso: string): string {
+    return new Date(iso).toLocaleTimeString([], {
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZone: timezone || undefined,
+    })
+  }
 
   const visibleEmployees = useMemo(() => {
     return employees.filter(
@@ -912,11 +1051,12 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
         timeFormat={timeFormat}
         isSelected={selectedShiftIds.includes(shift.id ?? '')}
         isSelectionMode={isSelectionMode}
+        isHighlighted={flashShiftId === shift.id}
         onClick={handleShiftClick}
         validationErrors={shiftErrors}
       />
     )
-  }, [validationErrors, roleLookup, timezone, timeFormat, selectedShiftIds, isSelectionMode, handleShiftClick])
+  }, [validationErrors, roleLookup, timezone, timeFormat, selectedShiftIds, isSelectionMode, flashShiftId, handleShiftClick])
 
   const handleShiftCreated = (shift: ShiftRecord) => {
     setShifts([...safeShifts, shift])
@@ -994,12 +1134,12 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
       onDragEnd={handleDragEnd}
     >
       <div className="min-w-0 space-y-4">
-        <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-6 text-sm text-slate-200">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
+        <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 sm:p-6 text-sm text-slate-200">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
               <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Smart Grid</p>
-              <div className="flex items-center gap-4 mb-4">
-                <h3 className="text-xl font-semibold text-white">Week view</h3>
+              <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-3 sm:mb-4">
+                <h3 className="text-lg sm:text-xl font-semibold text-white">Week view</h3>
                 {(hardBlockCount > 0 || softWarningCount > 0) && (
                   <div className="flex items-center gap-2">
                     {hardBlockCount > 0 && (
@@ -1022,68 +1162,68 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
                 )}
               </div>
               
-              {/* Action Buttons - More Prominent */}
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Quick Actions:</span>
-                  <button
-                    onClick={handleCopyLastWeek}
-                    className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 transition-colors shadow-sm"
-                    title="Copy all shifts from the previous week to this week"
-                  >
-                    <span>📋</span>
-                    Copy Last Week
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsSelectionMode(!isSelectionMode)
-                      if (isSelectionMode) clearSelection()
-                    }}
-                    className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors shadow-sm ${
-                      isSelectionMode
-                        ? 'bg-orange-600 text-white hover:bg-orange-500'
-                        : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
-                    }`}
-                    title={isSelectionMode ? 'Exit selection mode' : 'Select multiple shifts for bulk actions'}
-                  >
-                    <span>{isSelectionMode ? '✓' : '☑️'}</span>
-                    {isSelectionMode ? 'Done Selecting' : 'Select Shifts'}
-                  </button>
-                </div>
-                
-                <div className="h-6 w-px bg-slate-600"></div>
-                
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Export & Publish:</span>
-                  <button
-                    onClick={handleExportPDF}
-                    className="flex items-center gap-2 rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-600 transition-colors shadow-sm"
-                    title="Download schedule as PDF for printing or sharing"
-                  >
-                    <span>📄</span>
-                    Export PDF
-                  </button>
-                  <button
-                      onClick={handlePublish}
-                      className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
-                      disabled={hardBlockCount > 0}
-                      title={hardBlockCount > 0 ? 'Fix errors before publishing' : 'Make schedule visible to employees'}
-                  >
-                      <span>🚀</span>
-                      {schedule?.status === 'published' ? 'Publish Changes' : 'Publish Schedule'}
-                  </button>
-                </div>
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <span className="hidden sm:inline text-xs font-medium text-slate-400 uppercase tracking-wider">Quick Actions:</span>
+                <button
+                  onClick={handleCopyLastWeek}
+                  className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-white hover:bg-blue-500 transition-colors shadow-sm"
+                  title="Copy all shifts from the previous week to this week"
+                >
+                  <span>📋</span>
+                  <span className="hidden sm:inline">Copy Last Week</span>
+                  <span className="sm:hidden">Copy</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setIsSelectionMode(!isSelectionMode)
+                    if (isSelectionMode) clearSelection()
+                  }}
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold transition-colors shadow-sm ${
+                    isSelectionMode
+                      ? 'bg-orange-600 text-white hover:bg-orange-500'
+                      : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
+                  }`}
+                  title={isSelectionMode ? 'Exit selection mode' : 'Select multiple shifts for bulk actions'}
+                >
+                  <span>{isSelectionMode ? '✓' : '☑️'}</span>
+                  <span className="hidden sm:inline">{isSelectionMode ? 'Done Selecting' : 'Select Shifts'}</span>
+                  <span className="sm:hidden">{isSelectionMode ? 'Done' : 'Select'}</span>
+                </button>
+
+                <div className="hidden sm:block h-6 w-px bg-slate-600"></div>
+
+                <span className="hidden sm:inline text-xs font-medium text-slate-400 uppercase tracking-wider">Export & Publish:</span>
+                <button
+                  onClick={handleExportPDF}
+                  className="flex items-center gap-1.5 rounded-lg bg-slate-700 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-slate-200 hover:bg-slate-600 transition-colors shadow-sm"
+                  title="Download schedule as PDF for printing or sharing"
+                >
+                  <span>📄</span>
+                  <span className="hidden sm:inline">Export PDF</span>
+                  <span className="sm:hidden">PDF</span>
+                </button>
+                <button
+                  onClick={handlePublish}
+                  className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                  disabled={hardBlockCount > 0}
+                  title={hardBlockCount > 0 ? 'Fix errors before publishing' : 'Make schedule visible to employees'}
+                >
+                  <span className="hidden sm:inline">{schedule?.status === 'published' ? 'Publish Changes' : 'Publish Schedule'}</span>
+                  <span className="sm:hidden">Publish</span>
+                </button>
               </div>
             </div>
             
-            {/* Clipboard Status - More Prominent */}
+            {/* Clipboard Status */}
             {clipboardShifts.length > 0 && (
-              <div className="flex items-center gap-2 rounded-lg bg-green-600/20 border border-green-500/30 px-4 py-2 text-sm font-medium text-green-300">
+              <div className="flex flex-shrink-0 items-center gap-2 rounded-lg bg-green-600/20 border border-green-500/30 px-3 py-2 text-sm font-medium text-green-300">
                 <span>📎</span>
-                <span>{clipboardShifts.length} shifts copied</span>
+                <span className="hidden sm:inline">{clipboardShifts.length} shifts copied</span>
+                <span className="sm:hidden">{clipboardShifts.length}</span>
                 <button
                   onClick={() => setClipboardShifts([])}
-                  className="ml-2 text-green-400 hover:text-green-200 font-bold"
+                  className="ml-1 text-green-400 hover:text-green-200 font-bold"
                   title="Clear clipboard"
                 >
                   ✕
@@ -1092,7 +1232,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
             )}
           </div>
           
-          <div className="mt-4 pt-4 border-t border-slate-700">
+          <div className="hidden sm:block mt-4 pt-4 border-t border-slate-700">
             <p className="text-sm text-slate-300 leading-relaxed">
               {isSelectionMode
                 ? '💡 Click individual shifts to select them, then use the toolbar at the bottom for bulk actions like copy or delete.'
@@ -1101,7 +1241,129 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/60 shadow-xl shadow-black/30">
+        {/* Mobile View (< md): day tabs + single-day employee cards */}
+        <div className="md:hidden space-y-3">
+          {/* Day selector tabs */}
+          <div className="flex gap-1.5 overflow-x-auto pb-1">
+            {days.map((day, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setMobileSelectedDay(idx)}
+                className={`flex-shrink-0 rounded-lg px-3 py-2 text-center transition ${
+                  mobileSelectedDay === idx
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                }`}
+              >
+                <div className="text-[10px] font-semibold uppercase">
+                  {day.date.toLocaleDateString(undefined, { weekday: 'short', timeZone: timezone || undefined })}
+                </div>
+                <div className="text-sm font-bold">
+                  {day.date.toLocaleDateString(undefined, { day: 'numeric', timeZone: timezone || undefined })}
+                </div>
+                {gapDayIndexes.has(idx) && (
+                  <div className="mx-auto mt-0.5 h-1 w-1 rounded-full bg-amber-400" />
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Selected day navigation bar */}
+          <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/80 px-3 py-2">
+            <button
+              type="button"
+              onClick={() => setMobileSelectedDay((d) => Math.max(0, d - 1))}
+              disabled={mobileSelectedDay === 0}
+              className="rounded p-1 text-xl leading-none text-slate-400 hover:text-white disabled:opacity-30 transition"
+            >
+              ‹
+            </button>
+            <span className="text-sm font-semibold text-white">{days[mobileSelectedDay]?.label}</span>
+            <button
+              type="button"
+              onClick={() => setMobileSelectedDay((d) => Math.min(6, d + 1))}
+              disabled={mobileSelectedDay === 6}
+              className="rounded p-1 text-xl leading-none text-slate-400 hover:text-white disabled:opacity-30 transition"
+            >
+              ›
+            </button>
+          </div>
+
+          {/* Coverage gaps for selected day */}
+          {gapDayIndexes.has(mobileSelectedDay) && (
+            <div className="rounded-lg border border-amber-500/30 bg-amber-950/20 px-3 py-2">
+              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-amber-400">Coverage Gaps</div>
+              {(gapsByDay.get(mobileSelectedDay) ?? []).map((gap) => (
+                <div key={gap.id} className="text-[11px] text-amber-300">
+                  ⚠ {gap.count}/{gap.min} — {formatGapTime(gap.startTime)}
+                  {gap.endTime ? ` – ${formatGapTime(gap.endTime)}` : '+'}
+                  {gap.isBreakCaused ? ' (break)' : ''}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Loading / Error states */}
+          {hasError && (
+            <div className="rounded-lg border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm text-red-200">Unable to load schedule data.</div>
+          )}
+          {isLoading && !hasError && (
+            <div className="rounded-lg border border-slate-800 bg-slate-900/60 px-4 py-4 text-sm text-slate-300">Loading schedule…</div>
+          )}
+
+          {/* Employee cards for selected day */}
+          {!isLoading && !hasError && (
+            <div className="space-y-2">
+              {([null as GridEmployee | null, ...orderedRows]).map((employee) => {
+                const key = employee ? employee.id : 'unassigned'
+                const dayShifts = shiftsByEmployeeAndDay[key]?.[mobileSelectedDay] ?? []
+                const dayDate = days[mobileSelectedDay]?.date
+                const weeklyTotal = weeklyHours.get(key) ?? 0
+                return (
+                  <div key={key} className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60">
+                    <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900/80 px-3 py-2">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-semibold text-slate-100">
+                          {employee ? employee.name : 'Unassigned'}
+                        </span>
+                        {employee?.is_floating && (
+                          <span className="text-[11px] text-emerald-300">Floating</span>
+                        )}
+                      </div>
+                      <span className="text-[11px] font-semibold text-slate-400">{weeklyTotal.toFixed(1)}h/wk</span>
+                    </div>
+                    <div className="p-2">
+                      {dayShifts.length === 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => dayDate && handleOpenQuickAdd(employee, dayDate)}
+                          className="flex h-12 w-full items-center justify-center rounded-lg border border-dashed border-slate-700 text-xs font-semibold text-slate-400 transition hover:border-blue-500/60 hover:text-blue-300"
+                        >
+                          + Add shift
+                        </button>
+                      ) : (
+                        <div className="space-y-2">
+                          {dayShifts.map((shift) => renderShiftCard(shift))}
+                          <button
+                            type="button"
+                            onClick={() => dayDate && handleOpenQuickAdd(employee, dayDate)}
+                            className="w-full rounded-md border border-dashed border-slate-700 px-2 py-2 text-[11px] font-semibold text-slate-400 transition hover:border-blue-500/60 hover:text-blue-300"
+                          >
+                            + Add shift
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Desktop View (>= md): full 7-day grid */}
+        <div className="hidden md:block overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/60 shadow-xl shadow-black/30">
           <div className="overflow-auto">
             <div className="min-w-fit">
               <div className="grid grid-cols-[160px_repeat(7,minmax(120px,1fr))] border-b border-slate-800 bg-slate-900/90 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
@@ -1115,6 +1377,9 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
                   >
                     <div className="text-[11px] text-slate-400">{day.date.toLocaleDateString(undefined, { weekday: 'short', timeZone: timezone || undefined })}</div>
                     <div className="text-sm font-semibold text-white">{day.date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: timezone || undefined })}</div>
+                    {gapDayIndexes.has(day.index) && (
+                      <div className="mt-1 h-0.5 w-full rounded-full bg-amber-500/50" title="Coverage gap on this day" />
+                    )}
                   </div>
                 ))}
               </div>
@@ -1140,6 +1405,59 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
                       </MemoizedSortableEmployeeRow>
                     ))}
                   </SortableContext>
+
+                  {/* Coverage Gaps row — shows the specific time windows where staffing falls below minimum */}
+                  {gapsByDay.size > 0 && (
+                    <div className="grid grid-cols-[160px_repeat(7,minmax(120px,1fr))] border-t-2 border-amber-500/30 bg-amber-950/20">
+                      <div className="flex items-start border-r border-slate-800 px-3 py-2">
+                        <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-400/80">Coverage Gaps</span>
+                      </div>
+                      {days.map((day) => {
+                        const dayGaps = gapsByDay.get(day.index) ?? []
+                        return (
+                          <div key={day.index} className="border-r border-slate-800 px-2 py-2">
+                            {dayGaps.length === 0 ? (
+                              <div className="flex h-full min-h-[32px] items-center justify-center">
+                                <span className="text-[10px] text-slate-600">✓ covered</span>
+                              </div>
+                            ) : (
+                              <div className="space-y-1">
+                                {dayGaps.map((gap) => (
+                                  <div
+                                    key={gap.id}
+                                    onClick={() => {
+                                      if (gap.shiftId) {
+                                        setFlashShiftId(gap.shiftId)
+                                        setTimeout(() => {
+                                          const el = document.querySelector(`[data-shift-id="${gap.shiftId}"]`)
+                                          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                                          setTimeout(() => setFlashShiftId(null), 2000)
+                                        }, 100)
+                                      } else {
+                                        setShowErrorDetails(true)
+                                      }
+                                    }}
+                                    className="cursor-pointer rounded border border-amber-500/30 bg-amber-500/10 px-2 py-1 hover:bg-amber-500/20"
+                                  >
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-[10px] text-amber-400">⚠</span>
+                                      <span className="text-[10px] font-medium text-amber-300">
+                                        {gap.count}/{gap.min} {gap.isBreakCaused ? '(break)' : ''}
+                                      </span>
+                                    </div>
+                                    <div className="mt-0.5 text-[10px] text-amber-400/70">
+                                      {formatGapTime(gap.startTime)}
+                                      {gap.endTime ? ` – ${formatGapTime(gap.endTime)}` : '+'}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1200,6 +1518,17 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
           onClose={() => setShowErrorDetails(false)}
           errors={validationErrors}
           title="Schedule Issues"
+          onShiftClick={(shiftId) => {
+            setShowErrorDetails(false)
+            setFlashShiftId(shiftId)
+            setTimeout(() => {
+              const el = document.querySelector(`[data-shift-id="${shiftId}"]`)
+              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+              setTimeout(() => setFlashShiftId(null), 2000)
+            }, 100)
+          }}
+          suggestions={fixSuggestions}
+          onAddShift={handleAddShift}
         />
       </div>
     </DndContext>

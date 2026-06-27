@@ -106,6 +106,32 @@ export function useGlobalValidation({ enabled = true, organizationId }: UseGloba
     },
   })
 
+  // Approved time-off requests are stored as date ranges, not datetimes.
+  // Convert them to the same shape as employee_unavailability so the rules engine
+  // can flag shifts scheduled on approved time-off days as HARD_BLOCK conflicts.
+  const approvedTimeOffQuery = useQuery({
+    queryKey: ['global-validation-approved-time-off', organizationId, weekStartIso, weekEndIso],
+    enabled: enabled && Boolean(organizationId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('time_off_requests')
+        .select('id, employee_id, organization_id, start_date, end_date')
+        .eq('organization_id', organizationId)
+        .eq('status', 'approved')
+        .gte('end_date', weekStartIso.slice(0, 10))
+        .lte('start_date', weekEndIso.slice(0, 10))
+
+      if (error) throw new Error(error.message)
+      return (data ?? []).map((r) => ({
+        id: `tor-${r.id}`,
+        organization_id: r.organization_id,
+        employee_id: r.employee_id,
+        start_datetime: `${r.start_date}T00:00:00.000Z`,
+        end_datetime: `${r.end_date}T23:59:59.999Z`,
+      }))
+    },
+  })
+
   const locationIds = useMemo(() => locationsQuery.data?.map((l) => l.id) ?? [], [locationsQuery.data])
 
   const coverageQuery = useQuery({
@@ -123,42 +149,58 @@ export function useGlobalValidation({ enabled = true, organizationId }: UseGloba
     },
   })
 
-  // Compute global validation errors
+  const allUnavailability = useMemo(
+    () => [...(unavailabilityQuery.data ?? []), ...(approvedTimeOffQuery.data ?? [])],
+    [unavailabilityQuery.data, approvedTimeOffQuery.data]
+  )
+
+  // Validate per-location so each location's timezone is applied correctly.
+  // A single cross-org call would default to UTC, producing false-positive
+  // AVAILABILITY errors for stores in non-UTC timezones.
   const validationErrors = useMemo((): ValidationError[] => {
     if (!locationsQuery.data || !employeesQuery.data || !shiftsQuery.data) return []
-    
-    return validateSchedule(
-      shiftsQuery.data,
-      employeesQuery.data,
-      availabilityQuery.data ?? [],
-      unavailabilityQuery.data ?? [],
-      coverageQuery.data ?? [],
-      {
-        weekStart: weekStartDate,
-        weekStartDay: settings.week_start_day,
-        maxWeeklyHours: settings.weekly_overtime_threshold,
-        maxDailyHours: settings.daily_overtime_threshold,
-        minRestPeriodHours: settings.min_rest_period_hours,
-        enableCaliforniaRules: settings.enable_california_rules,
-      }
+
+    const allShifts = shiftsQuery.data
+    const allEmployees = employeesQuery.data
+    const allAvailability = availabilityQuery.data ?? []
+    const allCoverage = coverageQuery.data ?? []
+    const config = {
+      weekStart: weekStartDate,
+      weekStartDay: settings.week_start_day,
+      maxWeeklyHours: settings.weekly_overtime_threshold,
+      maxDailyHours: settings.daily_overtime_threshold,
+      minRestPeriodHours: settings.min_rest_period_hours,
+      enableCaliforniaRules: settings.enable_california_rules,
+    }
+
+    return locationsQuery.data.flatMap((loc) =>
+      validateSchedule(
+        allShifts.filter((s) => s.location_id === loc.id),
+        allEmployees,
+        allAvailability,
+        allUnavailability,
+        allCoverage.filter((c) => c.location_id === loc.id),
+        { ...config, timezone: loc.timezone || 'UTC' }
+      )
     )
   }, [
-    locationsQuery.data, 
-    employeesQuery.data, 
-    shiftsQuery.data, 
-    availabilityQuery.data, 
-    unavailabilityQuery.data, 
-    coverageQuery.data, 
-    settings, 
+    locationsQuery.data,
+    employeesQuery.data,
+    shiftsQuery.data,
+    availabilityQuery.data,
+    allUnavailability,
+    coverageQuery.data,
+    settings,
     weekStartDate
   ])
 
-  const isLoading = 
+  const isLoading =
     locationsQuery.isLoading ||
     employeesQuery.isLoading ||
     shiftsQuery.isLoading ||
     availabilityQuery.isLoading ||
     unavailabilityQuery.isLoading ||
+    approvedTimeOffQuery.isLoading ||
     coverageQuery.isLoading
 
   return {
@@ -169,7 +211,7 @@ export function useGlobalValidation({ enabled = true, organizationId }: UseGloba
     employees: employeesQuery.data ?? [],
     shifts: shiftsQuery.data ?? [],
     availability: availabilityQuery.data ?? [],
-    unavailability: unavailabilityQuery.data ?? [],
+    unavailability: allUnavailability,
     coverage: coverageQuery.data ?? [],
   }
 }

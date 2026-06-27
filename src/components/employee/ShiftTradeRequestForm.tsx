@@ -42,7 +42,15 @@ function ShiftTradeRequestForm({ employeeProfile, onSaved, onCancel }: Props) {
 
   const now = new Date().toISOString()
 
-  // My upcoming published shifts
+  // Start of today (local midnight) — used for the target employee's shifts so
+  // a colleague's shift that started earlier today still shows as tradeable.
+  const todayStart = (() => {
+    const d = new Date()
+    d.setHours(0, 0, 0, 0)
+    return d.toISOString()
+  })()
+
+  // My upcoming published shifts (must not have started yet)
   const { data: myShifts = [] } = useQuery<ShiftRow[]>({
     queryKey: ['employee-my-shifts-for-trade', empId],
     queryFn: async () => {
@@ -74,16 +82,17 @@ function ShiftTradeRequestForm({ employeeProfile, onSaved, onCancel }: Props) {
     },
   })
 
-  // Target employee's upcoming published shifts
+  // Target employee's shifts from today onward — use start-of-day so a colleague's
+  // shift that began earlier today still appears as a swap option.
   const { data: theirShifts = [] } = useQuery<ShiftRow[]>({
-    queryKey: ['colleague-shifts', targetEmployeeId],
+    queryKey: ['colleague-shifts', targetEmployeeId, todayStart],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('shifts')
         .select('id, start_datetime, end_datetime, locations(name), schedules!inner(status)')
         .eq('employee_id', targetEmployeeId)
         .eq('schedules.status', 'published')
-        .gte('start_datetime', now)
+        .gte('start_datetime', todayStart)
         .order('start_datetime', { ascending: true })
       if (error) throw new Error(error.message)
       return (data ?? []) as unknown as ShiftRow[]
@@ -185,20 +194,20 @@ function ShiftTradeRequestForm({ employeeProfile, onSaved, onCancel }: Props) {
         </div>
       )}
 
-      <div className="flex gap-2 pt-1">
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:opacity-60"
-        >
-          {isSubmitting ? 'Submitting…' : 'Submit request'}
-        </button>
+      <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row">
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-slate-500"
+          className="w-full rounded-lg border border-slate-700 px-4 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-slate-500 sm:w-auto"
         >
           Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:opacity-60 sm:w-auto"
+        >
+          {isSubmitting ? 'Submitting…' : 'Submit request'}
         </button>
       </div>
     </form>

@@ -116,7 +116,7 @@ export function LocationsManager({ organizationId }: Props) {
 
   return (
     <div className="min-w-0 space-y-6">
-      <div className="min-w-0 w-full max-w-[600px] rounded-xl border border-transparent bg-slate-900/70 px-4 py-5 text-slate-50 shadow-sm shadow-slate-950/30 sm:max-w-[640px] sm:px-6 sm:py-6 md:max-w-none md:border md:border-slate-800 md:px-7 md:py-7 mx-auto">
+      <div className="w-full rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-5 text-slate-50 sm:px-6 sm:py-6 md:px-7 md:py-7">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Locations</p>

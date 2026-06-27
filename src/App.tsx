@@ -88,24 +88,12 @@ function App() {
       if (!session?.user?.id) return
       setIsFetchingProfile(true)
 
-      // 1. Try manager first (with retry for replication lag)
-      let retries = 3
-      let managerData = null
-      let managerError = null
-
-      while (retries > 0) {
-        const result = await supabase
-          .from('managers')
-          .select('organization_id, email')
-          .single()
-
-        managerData = result.data
-        managerError = result.error
-
-        if (managerData || managerError?.code !== 'PGRST116') break
-        retries--
-        if (retries > 0) await new Promise(r => setTimeout(r, 500))
-      }
+      // 1. Try manager first — maybeSingle() returns null (not 406) when no row found
+      const { data: managerData } = await supabase
+        .from('managers')
+        .select('organization_id, email')
+        .eq('id', session.user.id)
+        .maybeSingle()
 
       if (managerData) {
         setManagerProfile(managerData)
@@ -119,7 +107,7 @@ function App() {
         .from('employees')
         .select('id, organization_id, name, email, home_location_id, is_active')
         .eq('user_id', session.user.id)
-        .single()
+        .maybeSingle()
 
       if (empData) {
         // Load role_ids via employee_roles
