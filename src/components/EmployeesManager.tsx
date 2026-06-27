@@ -22,6 +22,7 @@ export type EmployeeRecord = {
   is_active: boolean
   created_at: string
   role_ids: string[]
+  user_id?: string | null
 }
 
 type Props = {
@@ -83,7 +84,7 @@ function EmployeesManager({ organizationId }: Props) {
       const { data, error } = await supabase
         .from('employees')
         .select(
-          'id, name, email, phone, hourly_rate, home_location_id, is_floating, is_active, created_at, employee_roles(role:roles ( id, name, color ))',
+          'id, name, email, phone, hourly_rate, home_location_id, is_floating, is_active, created_at, user_id, employee_roles(role:roles ( id, name, color ))',
         )
         .order('created_at', { ascending: false })
 
@@ -107,6 +108,7 @@ function EmployeesManager({ organizationId }: Props) {
           is_floating: row.is_floating,
           is_active: row.is_active,
           created_at: row.created_at,
+          user_id: row.user_id ?? null,
           role_ids,
         } as EmployeeRecord
       })

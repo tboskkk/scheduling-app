@@ -92,7 +92,7 @@ create policy "Select own org" on public.organizations
 drop policy if exists "Insert org" on public.organizations;
 create policy "Insert org" on public.organizations
   for insert
-  to public
+  to authenticated
   with check (auth.role() in ('authenticated', 'service_role'));
 
 create policy "Update own org" on public.organizations
@@ -201,3 +201,306 @@ end;
 $$;
 
 grant execute on function public.create_org_and_manager(text) to authenticated;
+
+-- Add shifts table to support future-shift deletion guard
+create table if not exists public.shifts (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations (id) on delete cascade,
+  location_id uuid not null references public.locations (id) on delete cascade,
+  start_datetime timestamptz not null,
+  end_datetime timestamptz not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists shifts_organization_id_idx on public.shifts (organization_id);
+create index if not exists shifts_location_id_idx on public.shifts (location_id);
+create index if not exists shifts_start_datetime_idx on public.shifts (start_datetime);
+
+alter table public.shifts enable row level security;
+
+drop policy if exists "Select shifts in org" on public.shifts;
+create policy "Select shifts in org" on public.shifts
+  for select using (organization_id = current_manager_org_id());
+
+drop policy if exists "Insert shifts in org" on public.shifts;
+create policy "Insert shifts in org" on public.shifts
+  for insert with check (organization_id = current_manager_org_id());
+
+drop policy if exists "Update shifts in org" on public.shifts;
+create policy "Update shifts in org" on public.shifts
+  for update using (organization_id = current_manager_org_id())
+  with check (organization_id = current_manager_org_id());
+
+drop policy if exists "Delete shifts in org" on public.shifts;
+create policy "Delete shifts in org" on public.shifts
+  for delete using (organization_id = current_manager_org_id());
+
+grant select, insert, update, delete on public.shifts to authenticated;
+
+-- Prevent deleting locations that still have future-dated shifts
+create or replace function public.prevent_location_delete_with_future_shifts()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if exists (
+    select 1 from public.shifts s
+    where s.location_id = old.id
+      and s.start_datetime >= now()
+  ) then
+    raise exception 'Cannot delete location with future shifts' using errcode = 'P0001';
+  end if;
+  return old;
+end;
+$$;
+
+drop trigger if exists trg_prevent_location_delete on public.locations;
+create trigger trg_prevent_location_delete
+before delete on public.locations
+for each row
+execute function public.prevent_location_delete_with_future_shifts();
+
+-- Keep delete policy scoped to the manager's org
+drop policy if exists "Delete locations in org" on public.locations;
+create policy "Delete locations in org" on public.locations
+  for delete using (organization_id = current_manager_org_id());
+
+-- Employee availability and unavailability tables
+create table if not exists public.employee_availability (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations (id) on delete cascade,
+  employee_id uuid not null references public.employees (id) on delete cascade,
+  day_of_week integer not null check (day_of_week >= 0 and day_of_week <= 6),
+  start_time time not null,
+  end_time time not null,
+  created_at timestamptz not null default now(),
+  constraint employee_availability_time_order check (end_time > start_time)
+);
+
+create index if not exists employee_availability_org_idx on public.employee_availability (organization_id);
+create index if not exists employee_availability_employee_idx on public.employee_availability (employee_id);
+create index if not exists employee_availability_day_idx on public.employee_availability (day_of_week);
+
+create table if not exists public.employee_unavailability (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations (id) on delete cascade,
+  employee_id uuid not null references public.employees (id) on delete cascade,
+  start_datetime timestamptz not null,
+  end_datetime timestamptz not null,
+  created_at timestamptz not null default now(),
+  constraint employee_unavailability_time_order check (end_datetime > start_datetime)
+);
+
+create index if not exists employee_unavailability_org_idx on public.employee_unavailability (organization_id);
+create index if not exists employee_unavailability_employee_idx on public.employee_unavailability (employee_id);
+create index if not exists employee_unavailability_start_idx on public.employee_unavailability (start_datetime);
+
+alter table public.employee_availability enable row level security;
+alter table public.employee_unavailability enable row level security;
+
+create policy "Select availability in org" on public.employee_availability
+  for select using (organization_id = current_manager_org_id());
+
+create policy "Insert availability in org" on public.employee_availability
+  for insert with check (organization_id = current_manager_org_id());
+
+create policy "Update availability in org" on public.employee_availability
+  for update using (organization_id = current_manager_org_id())
+  with check (organization_id = current_manager_org_id());
+
+create policy "Delete availability in org" on public.employee_availability
+  for delete using (organization_id = current_manager_org_id());
+
+create policy "Select unavailability in org" on public.employee_unavailability
+  for select using (organization_id = current_manager_org_id());
+
+create policy "Insert unavailability in org" on public.employee_unavailability
+  for insert with check (organization_id = current_manager_org_id());
+
+create policy "Update unavailability in org" on public.employee_unavailability
+  for update using (organization_id = current_manager_org_id())
+  with check (organization_id = current_manager_org_id());
+
+create policy "Delete unavailability in org" on public.employee_unavailability
+  for delete using (organization_id = current_manager_org_id());
+
+grant select, insert, update, delete on public.employee_availability to authenticated;
+grant select, insert, update, delete on public.employee_unavailability to authenticated;
+
+-- Expand shifts table to support assignments and roles
+alter table public.shifts
+  add column if not exists employee_id uuid references public.employees (id) on delete set null,
+  add column if not exists role_id uuid references public.roles (id) on delete set null;
+
+create index if not exists shifts_employee_id_idx on public.shifts (employee_id);
+create index if not exists shifts_role_id_idx on public.shifts (role_id);
+
+-- Enforce 15-minute increments and positive durations for shifts
+-- 1) Drop existing constraint if present.
+alter table public.shifts drop constraint if exists shifts_15_minute_granularity;
+
+-- 2) Normalize every row to 15-minute boundaries and zero seconds (no WHERE to ensure full coverage).
+update public.shifts
+set
+  start_datetime = date_trunc('hour', start_datetime)
+    + make_interval(mins => 15 * floor(extract(minute from start_datetime) / 15)::int),
+  end_datetime = date_trunc('hour', end_datetime)
+    + make_interval(mins => 15 * ceil(extract(minute from end_datetime) / 15)::int);
+
+-- 3) Ensure every shift ends after it starts (minimum duration 15 minutes after rounding).
+update public.shifts
+set end_datetime = start_datetime + interval '15 minutes'
+where end_datetime <= start_datetime;
+
+-- 4) Apply the check constraint.
+alter table public.shifts
+  add constraint shifts_15_minute_granularity
+  check (
+    (date_part('minute', start_datetime)::int % 15 = 0)
+    and (date_part('minute', end_datetime)::int % 15 = 0)
+    and (date_part('second', start_datetime)::int = 0)
+    and (date_part('second', end_datetime)::int = 0)
+    and end_datetime > start_datetime
+  );
+
+create table coverage_requirements (
+  id uuid default gen_random_uuid() primary key,
+  location_id uuid references locations(id) on delete cascade not null,
+  role_id uuid references roles(id) on delete cascade not null,
+  day_of_week integer not null check (day_of_week between 0 and 6),
+  start_time time not null,
+  end_time time not null,
+  min_employees integer not null default 1,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  
+  constraint valid_time_range check (start_time < end_time)
+);
+
+alter table coverage_requirements enable row level security;
+
+create policy "Managers can view coverage requirements for their organization"
+  on coverage_requirements for select
+  using (
+    exists (
+      select 1 from locations
+      where locations.id = coverage_requirements.location_id
+      and locations.organization_id = current_manager_org_id()
+    )
+  );
+
+create policy "Managers can insert coverage requirements for their organization"
+  on coverage_requirements for insert
+  with check (
+    exists (
+      select 1 from locations
+      where locations.id = coverage_requirements.location_id
+      and locations.organization_id = current_manager_org_id()
+    )
+  );
+
+create policy "Managers can update coverage requirements for their organization"
+  on coverage_requirements for update
+  using (
+    exists (
+      select 1 from locations
+      where locations.id = coverage_requirements.location_id
+      and locations.organization_id = current_manager_org_id()
+    )
+  );
+
+create policy "Managers can delete coverage requirements for their organization"
+  on coverage_requirements for delete
+  using (
+    exists (
+      select 1 from locations
+      where locations.id = coverage_requirements.location_id
+      and locations.organization_id = current_manager_org_id()
+    )
+  );
+
+
+grant select, insert, update, delete on public.coverage_requirements to authenticated;
+
+-- Create schedules table
+create table if not exists public.schedules (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations (id) on delete cascade,
+  location_id uuid not null references public.locations (id) on delete cascade,
+  week_start_date date not null,
+  status text not null default 'draft' check (status in ('draft', 'published')),
+  published_at timestamptz,
+  published_by uuid references auth.users (id),
+  version integer not null default 1,
+  snapshot jsonb,
+  created_at timestamptz not null default now(),
+  unique (location_id, week_start_date)
+);
+
+create index if not exists schedules_organization_id_idx on public.schedules (organization_id);
+create index if not exists schedules_location_id_idx on public.schedules (location_id);
+create index if not exists schedules_week_start_date_idx on public.schedules (week_start_date);
+
+-- Add schedule_id to shifts
+alter table public.shifts
+add column if not exists schedule_id uuid references public.schedules (id) on delete cascade;
+
+create index if not exists shifts_schedule_id_idx on public.shifts (schedule_id);
+
+-- RLS for schedules
+alter table public.schedules enable row level security;
+
+drop policy if exists "Select schedules in org" on public.schedules;
+create policy "Select schedules in org" on public.schedules
+  for select using (organization_id = current_manager_org_id());
+
+drop policy if exists "Insert schedules in org" on public.schedules;
+create policy "Insert schedules in org" on public.schedules
+  for insert with check (organization_id = current_manager_org_id());
+
+drop policy if exists "Update schedules in org" on public.schedules;
+create policy "Update schedules in org" on public.schedules
+  for update using (organization_id = current_manager_org_id())
+  with check (organization_id = current_manager_org_id());
+
+drop policy if exists "Delete schedules in org" on public.schedules;
+create policy "Delete schedules in org" on public.schedules
+  for delete using (organization_id = current_manager_org_id());
+
+grant select, insert, update, delete on public.schedules to authenticated;
+
+-- Add display_order to employees table
+alter table public.employees
+add column display_order integer default 0;
+
+-- Create an index for performance
+create index if not exists employees_display_order_idx on public.employees (display_order);
+
+ALTER TABLE shifts
+ADD COLUMN unpaid_break_minutes INTEGER DEFAULT 0;
+
+ALTER TABLE shifts
+DROP COLUMN unpaid_break_minutes;
+
+ALTER TABLE shifts
+ADD COLUMN break_start_datetime TIMESTAMPTZ,
+ADD COLUMN break_end_datetime TIMESTAMPTZ;
+
+
+alter table public.shifts replica identity full;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_rel pr
+    join pg_class pc on pr.prrelid = pc.oid
+    join pg_publication pp on pr.prpubid = pp.oid
+    where pp.pubname = 'supabase_realtime'
+    and pc.relname = 'shifts'
+  ) then
+    alter publication supabase_realtime add table public.shifts;
+  end if;
+end;
+$$;

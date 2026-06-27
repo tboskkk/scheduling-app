@@ -70,7 +70,7 @@ export function validateSchedule(
   errors.push(...checkCrossLocation(shifts, employees))
 
   // 3. Unavailability
-  errors.push(...checkUnavailability(shifts, availability, unavailability))
+  errors.push(...checkUnavailability(shifts, availability, unavailability, mergedConfig.timezone))
 
   // 4. Weekly Overtime
   errors.push(...checkWeeklyOvertime(shifts, mergedConfig))
@@ -83,7 +83,7 @@ export function validateSchedule(
 
   // 7. Coverage Requirements
   if (mergedConfig.weekStart) {
-    errors.push(...checkCoverage(shifts, coverageRequirements, mergedConfig.weekStart, mergedConfig.timezone))
+    errors.push(...checkCoverage(shifts, coverageRequirements, mergedConfig.weekStart, mergedConfig.timezone, mergedConfig.weekStartDay))
   }
 
   return errors
@@ -161,7 +161,8 @@ function checkDoubleBooking(shifts: ShiftRecord[]): ValidationError[] {
 function checkUnavailability(
   shifts: ShiftRecord[],
   availability: EmployeeAvailability[],
-  unavailability: EmployeeUnavailability[]
+  unavailability: EmployeeUnavailability[],
+  timezone: string = 'UTC'
 ): ValidationError[] {
   const errors: ValidationError[] = []
 
@@ -185,7 +186,7 @@ function checkUnavailability(
     // Check recurring availability
     const employeeAvailability = availability.filter(a => a.employee_id === shift.employee_id)
     if (employeeAvailability.length > 0) {
-        if (!isShiftCoveredByAvailability(shift, employeeAvailability)) {
+        if (!isShiftCoveredByAvailability(shift, employeeAvailability, timezone)) {
              errors.push({
               id: `av-${shift.id}`,
               shiftId: shift.id,
@@ -209,52 +210,42 @@ function areIntervalsOverlapping(start1: string, end1: string, start2: string, e
   return s1 < e2 && s2 < e1
 }
 
-function isShiftCoveredByAvailability(shift: ShiftRecord, availability: EmployeeAvailability[]): boolean {
+function getLocalDayOfWeek(utcDate: Date, timezone: string): number {
+  const fmt = new Intl.DateTimeFormat('en-US', { timeZone: timezone, weekday: 'short' })
+  return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(fmt.format(utcDate))
+}
+
+function getNextLocalMidnight(utcDate: Date, timezone: string): Date {
+  // Add 25h to guarantee crossing into the next local day, then find that day's local midnight.
+  const nextDay = new Date(utcDate.getTime() + 25 * 60 * 60 * 1000)
+  return new Date(toZonedISOString(nextDay, '00:00', timezone))
+}
+
+function isShiftCoveredByAvailability(shift: ShiftRecord, availability: EmployeeAvailability[], timezone: string = 'UTC'): boolean {
     const shiftStart = new Date(shift.start_datetime)
     const shiftEnd = new Date(shift.end_datetime)
-    
-    const segments = splitShiftIntoDailySegments(shiftStart, shiftEnd)
-    
-    for (const segment of segments) {
-        const dayOfWeek = segment.start.getUTCDay() // 0-6 UTC
+
+    let current = new Date(shiftStart)
+    while (current < shiftEnd) {
+        const nextMidnight = getNextLocalMidnight(current, timezone)
+        const segmentEnd = nextMidnight < shiftEnd ? nextMidnight : shiftEnd
+
+        const dayOfWeek = getLocalDayOfWeek(current, timezone)
         const dayAvailability = availability.filter(a => a.day_of_week === dayOfWeek)
-        
-        if (dayAvailability.length === 0) return false 
-        
+
+        if (dayAvailability.length === 0) return false
+
         const isCovered = dayAvailability.some(a => {
-            const availStart = parseTimeUTC(a.start_time, segment.start)
-            const availEnd = parseTimeUTC(a.end_time, segment.start)
-            
-            return segment.start.getTime() >= availStart.getTime() && segment.end.getTime() <= availEnd.getTime()
+            const availStartMs = new Date(toZonedISOString(current, a.start_time, timezone)).getTime()
+            const availEndMs = new Date(toZonedISOString(current, a.end_time, timezone)).getTime()
+            return current.getTime() >= availStartMs && segmentEnd.getTime() <= availEndMs
         })
-        
+
         if (!isCovered) return false
+        current = new Date(segmentEnd)
     }
-    
+
     return true
-}
-
-function splitShiftIntoDailySegments(start: Date, end: Date): { start: Date, end: Date }[] {
-    const segments: { start: Date, end: Date }[] = []
-    let current = new Date(start)
-    
-    while (current < end) {
-        const nextMidnight = new Date(current)
-        nextMidnight.setUTCHours(24, 0, 0, 0) // UTC Midnight
-        
-        const segmentEnd = nextMidnight < end ? nextMidnight : end
-        segments.push({ start: new Date(current), end: new Date(segmentEnd) })
-        current = segmentEnd
-    }
-    
-    return segments
-}
-
-function parseTimeUTC(timeStr: string, date: Date): Date {
-    const [hours, minutes, seconds] = timeStr.split(':').map(Number)
-    const result = new Date(date)
-    result.setUTCHours(hours, minutes, seconds || 0, 0)
-    return result
 }
 
 function checkWeeklyOvertime(shifts: ShiftRecord[], config: ValidationConfig): ValidationError[] {
@@ -368,18 +359,21 @@ function checkRestPeriod(shifts: ShiftRecord[], config: ValidationConfig): Valid
 }
 
 function checkCoverage(
-  shifts: ShiftRecord[], 
-  requirements: CoverageRequirement[], 
+  shifts: ShiftRecord[],
+  requirements: CoverageRequirement[],
   weekStart: Date,
-  timezone: string = 'UTC'
+  timezone: string = 'UTC',
+  weekStartDay: number = 0
 ): ValidationError[] {
   const errors: ValidationError[] = []
-  
+
   // For each requirement, check if it's met
   for (const req of requirements) {
-    // Calculate the specific date for this requirement in the current week
+    // req.day_of_week is absolute (0=Sun…6=Sat). Convert to days-from-weekStart so
+    // Monday-start orgs correctly map day 0 (Sun) to the last day of their week.
     const targetDate = new Date(weekStart)
-    targetDate.setUTCDate(targetDate.getUTCDate() + req.day_of_week)
+    const daysFromWeekStart = (req.day_of_week - weekStartDay + 7) % 7
+    targetDate.setUTCDate(targetDate.getUTCDate() + daysFromWeekStart)
     
     const reqStartIso = toZonedISOString(targetDate, req.start_time, timezone)
     const reqEndIso = toZonedISOString(targetDate, req.end_time, timezone)

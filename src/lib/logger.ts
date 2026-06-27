@@ -19,6 +19,10 @@ const SENSITIVE_KEYS = [
   'key',
   'authorization',
   'cookie',
+  'email',
+  'name',
+  'phone',
+  'employee_id',
 ];
 
 class Logger {

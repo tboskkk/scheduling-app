@@ -33,11 +33,15 @@ jobs:
 
     - name: Build
       run: npm run build
+      env:
+        VITE_SUPABASE_PROJECT_URL: ${{ secrets.VITE_SUPABASE_PROJECT_URL }}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
 
   security-scan:
     runs-on: ubuntu-latest
+    needs: [test]
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Run npm audit
       run: npm audit --audit-level=high

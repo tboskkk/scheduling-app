@@ -1,3 +1,5 @@
+// In-memory only — resets on every page refresh and is per-tab. Supabase Auth's
+// built-in rate limiting is the actual brute-force gate for all auth endpoints.
 const rateLimits = new Map<string, { count: number; lastAttempt: number }>();
 
 export const checkRateLimit = (key: string, limit: number, windowMs: number): boolean => {

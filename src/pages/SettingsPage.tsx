@@ -283,7 +283,12 @@ function SettingsPage() {
       <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
         <QuickShiftsManager 
           quickShifts={localSettings?.quick_shifts || []}
-          onChange={(quickShifts) => handleChange('quick_shifts', quickShifts)}
+          onChange={async (quickShifts) => {
+            if (!localSettings) return
+            const updated = { ...localSettings, quick_shifts: quickShifts }
+            setLocalSettings(updated)
+            await updateSettings(updated)
+          }}
         />
       </div>
 

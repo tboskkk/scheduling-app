@@ -106,3 +106,40 @@ export interface Organization {
   settings: OrganizationSettings;
   created_at: string;
 }
+
+export type EmployeeProfile = {
+  id: string
+  organization_id: string
+  name: string
+  email: string | null
+  home_location_id: string | null
+  is_active: boolean
+  role_ids: string[]
+}
+
+export type TimeOffRequest = {
+  id: string
+  organization_id: string
+  employee_id: string
+  start_date: string
+  end_date: string
+  reason: string | null
+  status: 'pending' | 'approved' | 'denied'
+  manager_note: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type ShiftTradeRequest = {
+  id: string
+  organization_id: string
+  requesting_employee_id: string
+  target_employee_id: string
+  requesting_shift_id: string | null
+  target_shift_id: string | null
+  status: 'pending' | 'accepted' | 'declined' | 'approved' | 'denied'
+  requester_note: string | null
+  manager_note: string | null
+  created_at: string
+  updated_at: string
+}

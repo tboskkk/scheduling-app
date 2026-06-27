@@ -197,7 +197,7 @@ const SchedulePageContent = ({
     }).sort((a, b) => new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime())
   }
 
-  const sortedEmployees = [...employees].sort((a, b) => a.name.localeCompare(b.name))
+  const sortedEmployees = employees
 
   return (
     <Page size="A4" orientation="landscape" style={styles.page}>

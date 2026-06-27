@@ -69,9 +69,9 @@ export function useGlobalValidation({ enabled = true, organizationId }: UseGloba
         .from('shifts')
         .select('*')
         .eq('organization_id', organizationId)
-        .gte('start', weekStartIso)
-        .lt('start', weekEndIso)
-        .order('start', { ascending: true })
+        .gte('start_datetime', weekStartIso)
+        .lt('start_datetime', weekEndIso)
+        .order('start_datetime', { ascending: true })
 
       if (error) throw new Error(error.message)
       return data ?? []
@@ -106,14 +106,17 @@ export function useGlobalValidation({ enabled = true, organizationId }: UseGloba
     },
   })
 
+  const locationIds = useMemo(() => locationsQuery.data?.map((l) => l.id) ?? [], [locationsQuery.data])
+
   const coverageQuery = useQuery({
-    queryKey: ['global-validation-coverage', organizationId],
-    enabled: enabled && Boolean(organizationId),
+    queryKey: ['global-validation-coverage', organizationId, locationIds],
+    enabled: enabled && Boolean(organizationId) && Boolean(locationsQuery.data?.length),
     queryFn: async () => {
+      if (locationIds.length === 0) return []
       const { data, error } = await supabase
         .from('coverage_requirements')
         .select('*')
-        .eq('organization_id', organizationId)
+        .in('location_id', locationIds)
 
       if (error) throw new Error(error.message)
       return data ?? []

@@ -76,6 +76,27 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
     }
   }, [isManagerLoading, managerProfile, location.pathname, navigate])
 
+  const { data: pendingRequestsCount = 0 } = useQuery<number>({
+    queryKey: ['manager-pending-counts', managerProfile?.organization_id],
+    queryFn: async () => {
+      const [torRes, strRes] = await Promise.all([
+        supabase
+          .from('time_off_requests')
+          .select('*', { count: 'exact', head: true })
+          .eq('organization_id', managerProfile!.organization_id)
+          .eq('status', 'pending'),
+        supabase
+          .from('shift_trade_requests')
+          .select('*', { count: 'exact', head: true })
+          .eq('organization_id', managerProfile!.organization_id)
+          .eq('status', 'accepted'),
+      ])
+      return (torRes.count ?? 0) + (strRes.count ?? 0)
+    },
+    enabled: Boolean(managerProfile?.organization_id),
+    refetchInterval: 60_000,
+  })
+
   const navItems = useMemo(() => {
     const icons = {
       dashboard: (
@@ -132,22 +153,36 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
           />
         </svg>
       ),
+      requests: (
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+          <path
+            d="M4 4h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H8l-4 4V5a1 1 0 0 1 1-1Z"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path d="M8 9h8M8 12h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        </svg>
+      ),
     }
 
     if (!managerProfile) {
-      return [{ label: 'Dashboard', to: '/dashboard', icon: icons.dashboard }]
+      return [{ label: 'Dashboard', to: '/dashboard', icon: icons.dashboard, badge: 0 }]
     }
 
     const schedulePath = selectedLocationId ? `/schedule/${selectedLocationId}` : '/schedule'
 
     return [
-      { label: 'Dashboard', to: '/dashboard', icon: icons.dashboard },
-      { label: 'Schedule', to: schedulePath, icon: icons.schedule },
-      { label: 'Employees', to: '/employees', icon: icons.employees },
-      { label: 'Locations', to: '/locations', icon: icons.locations },
-      { label: 'Settings', to: '/settings', icon: icons.settings },
+      { label: 'Dashboard', to: '/dashboard', icon: icons.dashboard, badge: 0 },
+      { label: 'Schedule', to: schedulePath, icon: icons.schedule, badge: 0 },
+      { label: 'Employees', to: '/employees', icon: icons.employees, badge: 0 },
+      { label: 'Locations', to: '/locations', icon: icons.locations, badge: 0 },
+      { label: 'Requests', to: '/requests', icon: icons.requests, badge: pendingRequestsCount },
+      { label: 'Settings', to: '/settings', icon: icons.settings, badge: 0 },
     ]
-  }, [selectedLocationId, managerProfile])
+  }, [selectedLocationId, managerProfile, pendingRequestsCount])
 
   const activeTimezone = useMemo(() => {
     const match = locations?.find((loc) => loc.id === selectedLocationId)
@@ -169,6 +204,13 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
     validationErrors.filter(error => error.severity === ConflictSeverity.HARD_BLOCK).length, 
     [validationErrors]
   )
+
+  const isOnSchedule = location.pathname.startsWith('/schedule')
+  const pageTitle = location.pathname.startsWith('/employees') ? 'Employees'
+    : location.pathname.startsWith('/locations') ? 'Locations'
+    : location.pathname.startsWith('/requests') ? 'Requests'
+    : location.pathname.startsWith('/settings') ? 'Settings'
+    : 'Dashboard'
 
   const handleWeekChange = (delta: number) => shiftWeek(delta)
 
@@ -225,8 +267,13 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
                   `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition ${isActive ? 'bg-blue-600 text-white' : 'text-slate-200 hover:bg-slate-800/80'}`
                 }
               >
-                <span className="flex h-8 w-8 items-center justify-center rounded-md bg-slate-800 text-slate-200">
+                <span className="relative flex h-8 w-8 items-center justify-center rounded-md bg-slate-800 text-slate-200">
                   {item.icon}
+                  {item.badge > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white">
+                      {item.badge > 99 ? '99+' : item.badge}
+                    </span>
+                  )}
                 </span>
                 {!isSidebarCollapsed && <span>{item.label}</span>}
               </NavLink>
@@ -310,56 +357,60 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
                   ☰
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => handleWeekChange(-1)}
-                  className="rounded-md border border-slate-700 px-2 py-2 text-xs transition hover:border-slate-500"
-                  aria-label="Previous week"
-                >
-                  ◀
-                </button>
-                <div className="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-left">
-                  <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Week</p>
-                  <p className="text-sm font-semibold text-white">{weekRangeLabel}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleWeekChange(1)}
-                  className="rounded-md border border-slate-700 px-2 py-2 text-xs transition hover:border-slate-500"
-                  aria-label="Next week"
-                >
-                  ▶
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSelectToday}
-                  className="rounded-md border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-100 transition hover:border-blue-400 hover:text-white"
-                >
-                  Today
-                </button>
+                {isOnSchedule ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => handleWeekChange(-1)}
+                      className="rounded-md border border-slate-700 px-2 py-2 text-xs transition hover:border-slate-500"
+                      aria-label="Previous week"
+                    >
+                      ◀
+                    </button>
+                    <div className="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-left">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-slate-500">Week</p>
+                      <p className="text-sm font-semibold text-white">{weekRangeLabel}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleWeekChange(1)}
+                      className="rounded-md border border-slate-700 px-2 py-2 text-xs transition hover:border-slate-500"
+                      aria-label="Next week"
+                    >
+                      ▶
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSelectToday}
+                      className="rounded-md border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-100 transition hover:border-blue-400 hover:text-white"
+                    >
+                      Today
+                    </button>
+                  </>
+                ) : (
+                  <span className="text-sm font-semibold text-white">{pageTitle}</span>
+                )}
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
+              {isOnSchedule && (
                 <button
                   onClick={() => setShowErrorDetails(true)}
-                  className="inline-flex items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-200 hover:bg-amber-500/20 transition-colors"
+                  className="inline-flex items-center gap-2.5 rounded-md border border-slate-700 bg-slate-950/40 px-3 py-2 text-xs font-semibold transition hover:border-slate-500"
                 >
-                  ⚠️ <span>{warningCount}</span>
+                  <span className="text-red-300">🔴 {hardBlockCount}</span>
+                  <span className="text-slate-600">·</span>
+                  <span className="text-amber-300">⚠️ {warningCount}</span>
                 </button>
-                <button
-                  onClick={() => setShowErrorDetails(true)}
-                  className="inline-flex items-center gap-2 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-200 hover:bg-red-500/20 transition-colors"
-                >
-                  🔴 <span>{hardBlockCount}</span>
-                </button>
-              </div>
+              )}
             </div>
           </header>
 
           <div className="mx-auto max-w-7xl px-4 py-6 pt-28 md:px-6 xl:max-w-none xl:px-8">
-            <div className="mb-4 block rounded-lg border border-blue-500/30 bg-blue-500/10 p-3 text-xs text-blue-100 md:hidden">
-              Best experienced on desktop. Mobile is viewable, but full Smart Grid editing is desktop-first.
-            </div>
+            {isOnSchedule && (
+              <div className="mb-4 block rounded-lg border border-blue-500/30 bg-blue-500/10 p-3 text-xs text-blue-100 md:hidden">
+                Best experienced on desktop. Mobile is viewable, but full Smart Grid editing is desktop-first.
+              </div>
+            )}
             <Outlet />
           </div>
         </main>

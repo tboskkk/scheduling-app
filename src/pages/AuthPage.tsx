@@ -5,12 +5,15 @@ import { supabase } from '../lib/supabaseClient'
 import { isEmailAllowed } from '../lib/auth-utils'
 import { checkRateLimit } from '../lib/security'
 
+type UserRole = 'manager' | 'employee' | null
+
 interface AuthPageProps {
   mode?: 'login' | 'register'
   session: Session | null
+  userRole?: UserRole
 }
 
-function AuthPage({ mode = 'login', session }: AuthPageProps) {
+function AuthPage({ mode = 'login', session, userRole }: AuthPageProps) {
   const navigate = useNavigate()
   const [authView, setAuthView] = useState<'login' | 'register'>(mode)
   const [email, setEmail] = useState('')
@@ -36,13 +39,14 @@ function AuthPage({ mode = 'login', session }: AuthPageProps) {
 
   useEffect(() => {
     if (session) {
-      navigate('/dashboard', { replace: true })
+      const dest = userRole === 'employee' ? '/employee/dashboard' : '/dashboard'
+      navigate(dest, { replace: true })
     }
-  }, [session, navigate])
+  }, [session, userRole, navigate])
 
   const headline = useMemo(() => {
     if (authView === 'register') return 'Create your manager account'
-    return 'Welcome back, manager'
+    return 'Welcome back'
   }, [authView])
 
   const handleSubmit = async (event: FormEvent) => {
@@ -83,7 +87,10 @@ function AuthPage({ mode = 'login', session }: AuthPageProps) {
     setIsAuthLoading(false)
   }
 
-  if (session) return <Navigate to="/dashboard" replace />
+  if (session) {
+    const dest = userRole === 'employee' ? '/employee/dashboard' : '/dashboard'
+    return <Navigate to={dest} replace />
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4 py-10 text-slate-100">

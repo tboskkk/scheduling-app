@@ -102,6 +102,8 @@ function AddEditEmployeeDialog({
 
   const timeFormat = organization?.settings?.time_format || '12h'
   const [isSaving, setIsSaving] = useState(false)
+  const [inviteStatus, setInviteStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const [inviteError, setInviteError] = useState<string | null>(null)
 
   const isEditing = Boolean(employee)
 
@@ -198,6 +200,8 @@ function AddEditEmployeeDialog({
     
     setError(null)
     setAvailabilityError(null)
+    setInviteStatus('idle')
+    setInviteError(null)
     setActiveTab(initialTab)
     
     if (employee) {
@@ -252,12 +256,12 @@ function AddEditEmployeeDialog({
         phone: formState.phone.trim() || null,
         hourly_rate: formState.hourlyRate ? parseFloat(formState.hourlyRate) : null,
         home_location_id: formState.homeLocationId || null,
-        role_ids: Array.from(formState.roleIds),
         is_floating: formState.isFloating,
         is_active: formState.isActive,
         organization_id: organizationId,
       }
 
+      let savedEmployeeId: string
       let result
       if (isEditing && employee) {
         const { data, error } = await supabase
@@ -267,6 +271,7 @@ function AddEditEmployeeDialog({
           .select()
           .single()
         result = { data, error }
+        savedEmployeeId = employee.id
       } else {
         const { data, error } = await supabase
           .from('employees')
@@ -274,12 +279,31 @@ function AddEditEmployeeDialog({
           .select()
           .single()
         result = { data, error }
+        savedEmployeeId = result.data?.id
       }
 
       if (result.error) throw new Error(result.error.message)
       if (!result.data) throw new Error('No data returned')
 
-      onSaved(result.data as EmployeeRecord)
+      // Sync role assignments via employee_roles join table
+      const newRoleIds = Array.from(formState.roleIds)
+      const { error: deleteRolesError } = await supabase
+        .from('employee_roles')
+        .delete()
+        .eq('employee_id', savedEmployeeId)
+      if (deleteRolesError) throw new Error(deleteRolesError.message)
+
+      if (newRoleIds.length > 0) {
+        const { error: insertRolesError } = await supabase
+          .from('employee_roles')
+          .insert(newRoleIds.map((roleId) => ({
+            employee_id: savedEmployeeId,
+            role_id: roleId,
+          })))
+        if (insertRolesError) throw new Error(insertRolesError.message)
+      }
+
+      onSaved({ ...result.data, role_ids: newRoleIds } as EmployeeRecord)
       onClose()
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Unable to save employee')
@@ -380,6 +404,66 @@ function AddEditEmployeeDialog({
                   />
                 </label>
               </div>
+
+              {/* Portal invite — only shown when editing an existing employee */}
+              {isEditing && employee && (
+                <div className="rounded-lg border border-slate-700 bg-slate-950/60 px-4 py-3 space-y-2">
+                  <p className="text-sm font-semibold text-slate-100">Employee Portal Access</p>
+                  {employee.user_id ? (
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-300">
+                        <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+                        Portal access active
+                      </span>
+                    </div>
+                  ) : employee.email ? (
+                    <div className="space-y-2">
+                      <p className="text-xs text-slate-400">This employee has no portal account yet. Send an invite to {employee.email}.</p>
+                      {inviteStatus === 'sent' ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-500/40 bg-blue-500/10 px-2.5 py-1 text-xs font-semibold text-blue-300">
+                          Invite sent ✓
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={inviteStatus === 'sending'}
+                          onClick={async () => {
+                            setInviteStatus('sending')
+                            setInviteError(null)
+                            const { error } = await supabase.functions.invoke('invite-employee', {
+                              body: { employee_id: employee.id },
+                            })
+                            if (error) {
+                              setInviteStatus('error')
+                              // Try to extract the actual error message from the response body
+                              let msg = error.message || 'Failed to send invite'
+                              try {
+                                // FunctionsHttpError has a context property with the raw Response
+                                const ctx = (error as unknown as { context?: Response }).context
+                                if (ctx) {
+                                  const body = await ctx.json()
+                                  if (body?.error) msg = body.error
+                                }
+                              } catch { /* ignore parse errors */ }
+                              setInviteError(msg)
+                            } else {
+                              setInviteStatus('sent')
+                            }
+                          }}
+                          className="rounded-lg border border-blue-500/50 px-3 py-1.5 text-xs font-semibold text-blue-300 hover:bg-blue-500/10 transition disabled:opacity-50"
+                        >
+                          {inviteStatus === 'sending' ? 'Sending…' : 'Send invite email'}
+                        </button>
+                      )}
+                      {inviteStatus === 'error' && inviteError && (
+                        <p className="text-xs text-red-400">{inviteError}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-500">Add an email address to enable portal invite.</p>
+                  )}
+                </div>
+              )}
 
               <div className="grid gap-3 md:grid-cols-2">
                 <label className="space-y-2">

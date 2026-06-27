@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import type { QuickShift } from '../types'
 import { useOrganizationStore } from '../lib/useOrganizationStore'
-import { formatTimeLabel } from './schedule/time'
 
 interface QuickShiftsManagerProps {
   quickShifts: QuickShift[]
@@ -24,10 +23,13 @@ export default function QuickShiftsManager({ quickShifts, onChange }: QuickShift
 
   // Helper function to format time strings (HH:MM) for display
   const formatTimeForDisplay = (timeString: string) => {
-    // Convert HH:MM to ISO string for today's date to use with formatTimeLabel
-    const today = new Date().toISOString().split('T')[0]
-    const isoString = `${today}T${timeString}:00.000Z`
-    return formatTimeLabel(isoString, null, timeFormat)
+    const [h, m] = timeString.split(':').map(Number)
+    if (timeFormat === '24h') {
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+    }
+    const hour12 = h % 12 || 12
+    const ampm = h < 12 ? 'AM' : 'PM'
+    return `${hour12}:${String(m).padStart(2, '0')} ${ampm}`
   }
 
   const handleAdd = () => {

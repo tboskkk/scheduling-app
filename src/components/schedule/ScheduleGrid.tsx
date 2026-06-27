@@ -357,7 +357,11 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
         snapshot: safeShifts
     }
 
-    const { data, error } = await supabase.from('schedules').insert(payload).select().single()
+    const { data, error } = await supabase
+      .from('schedules')
+      .upsert(payload, { onConflict: 'location_id,week_start_date' })
+      .select()
+      .single()
 
     if (error) {
         setError(error.message)
