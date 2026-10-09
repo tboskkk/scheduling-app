@@ -39,7 +39,7 @@ export default function DemoBanner({ email, role, config }: DemoBannerProps) {
   }
 
   return (
-    <div className="relative z-50 flex items-center justify-center gap-3 bg-amber-400 px-3 py-1 text-xs font-medium text-amber-950">
+    <div className="flex items-center justify-center gap-3 bg-amber-400 px-3 py-1 text-xs font-medium text-amber-950">
       <span className="truncate">{error ?? "You're exploring the demo. Changes reset nightly."}</span>
       <button
         type="button"

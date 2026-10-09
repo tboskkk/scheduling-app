@@ -229,7 +229,6 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <OfflineIndicator />
-      <DemoBanner email={session.user.email ?? null} role="manager" />
       <div className="flex min-h-screen flex-col md:flex-row">
         <aside
           className={`fixed top-0 left-0 h-screen z-40 flex flex-col border-r border-slate-800/80 bg-slate-900/90 p-4 shadow-2xl transition-transform duration-200 md:z-auto md:bg-slate-900/70 md:shadow-none ${isMobileNavOpen ? 'translate-x-0 w-72' : '-translate-x-full w-72 md:translate-x-0'} ${isSidebarCollapsed ? 'md:w-16 md:items-center md:px-3' : 'md:w-64 md:px-4 md:pr-6'}`}
@@ -347,6 +346,7 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
         )}
 
         <main className={`flex-1 bg-slate-950/60 transition-all duration-200 ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
+          <DemoBanner email={session.user.email ?? null} role="manager" />
           <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-900/80 backdrop-blur">
             <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
