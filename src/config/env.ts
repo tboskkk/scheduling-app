@@ -6,6 +6,10 @@ export const env = {
   environment: import.meta.env.VITE_APP_ENVIRONMENT || 'development',
   enableAnalytics: import.meta.env.VITE_ENABLE_ANALYTICS === 'true',
   allowedEmailDomains: (import.meta.env.VITE_ALLOWED_EMAIL_DOMAINS || '').split(',').filter(Boolean),
+  demoMode: import.meta.env.VITE_DEMO_MODE === 'true',
+  demoManagerEmail: import.meta.env.VITE_DEMO_MANAGER_EMAIL || '',
+  demoEmployeeEmail: import.meta.env.VITE_DEMO_EMPLOYEE_EMAIL || '',
+  demoPassword: import.meta.env.VITE_DEMO_PASSWORD || '',
 };
 
 export const validateEnv = (config = env) => {
