@@ -127,15 +127,15 @@ async function checkEmployee() {
     hidden.error ? `rejected: ${hidden.error.message}` : `leaked=${[...leakedKeys].join(', ') || 'none'}`,
   )
 
-  // Manager-only columns of colleagues must not be readable: either the column
-  // is refused (42501) or only the employee's own row comes back.
-  const rates = await client.from('employees').select('id, hourly_rate')
+  // Pay and contact columns of colleagues must not be readable (0008): the
+  // employees table returns exactly one row, the employee's own.
+  const rates = await client.from('employees').select('id, hourly_rate, email, phone')
   const rateRows = rates.data ?? []
   const colleagueRows = rateRows.filter((row) => row.id !== ownId).length
   report(
-    'employee cannot read colleagues hourly_rate',
-    rates.error ? rates.error.code === '42501' : ownId !== null && colleagueRows === 0,
-    rates.error ? `rejected: ${rates.error.message}` : `rows=${rateRows.length}, colleagues=${colleagueRows}`,
+    'employee cannot read colleagues hourly_rate, email, phone',
+    !rates.error && ownId !== null && rateRows.length === 1 && colleagueRows === 0,
+    rates.error ? rates.error.message : `rows=${rateRows.length}, colleagues=${colleagueRows}`,
   )
 
   await client.auth.signOut()
