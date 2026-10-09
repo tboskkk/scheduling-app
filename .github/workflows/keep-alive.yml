@@ -4,7 +4,7 @@ name: Keep Supabase alive
 # VITE_SUPABASE_PUBLISHABLE_KEY, DEMO_EMAIL, DEMO_PASSWORD.
 on:
   schedule:
-    - cron: '0 15 * * 1'
+    - cron: '0 15 * * 1,4'
   workflow_dispatch:
 
 jobs:
