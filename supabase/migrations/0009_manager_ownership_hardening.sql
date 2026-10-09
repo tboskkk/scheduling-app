@@ -103,7 +103,9 @@ CREATE TRIGGER trg_organizations_pin_created_by
 --    through the REST API; anon has no EXECUTE.
 -- =============================================================================
 
--- Who created an organization (NULL for legacy orgs and the demo org seed).
+-- Who created an organization. NULL for legacy orgs with no managers row.
+-- The backfill above gives the demo org the demo manager; it is NULL only if
+-- reset_demo() has to re-insert the demo org row (reset_demo never sets it).
 CREATE OR REPLACE FUNCTION private.org_created_by(p_org uuid)
 RETURNS uuid
 LANGUAGE sql
