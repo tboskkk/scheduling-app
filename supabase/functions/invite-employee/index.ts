@@ -1,5 +1,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
+const DEMO_ORGANIZATION_ID = 'd3e00000-0000-4000-8000-000000000001'
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -59,6 +61,14 @@ Deno.serve(async (req) => {
 
   if (managerError || !manager) {
     return new Response(JSON.stringify({ error: 'Not a manager' }), {
+      status: 403,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+
+  // The public demo organization must never send real invite emails
+  if (manager.organization_id === DEMO_ORGANIZATION_ID) {
+    return new Response(JSON.stringify({ error: 'Invites are disabled for the demo organization' }), {
       status: 403,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })

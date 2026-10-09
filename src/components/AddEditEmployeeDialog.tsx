@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabaseClient'
+import { isDemoUser } from '../lib/demo'
 import { useOrganizationStore } from '../lib/useOrganizationStore'
 import { formatTimeLabel } from './schedule/time'
 import type { EmployeeRecord, RoleRecord } from './EmployeesManager'
@@ -78,6 +79,7 @@ type AddEditEmployeeDialogProps = {
   currency: string
   onSaved: (employee: EmployeeRecord) => void
   initialTab?: 'details' | 'availability'
+  userEmail?: string | null
 }
 
 function AddEditEmployeeDialog({ 
@@ -89,7 +91,8 @@ function AddEditEmployeeDialog({
   roles, 
   currency,
   onSaved,
-  initialTab = 'details'
+  initialTab = 'details',
+  userEmail = null,
 }: AddEditEmployeeDialogProps) {
   const queryClient = useQueryClient()
   const { organization } = useOrganizationStore()
@@ -106,6 +109,7 @@ function AddEditEmployeeDialog({
   const [inviteError, setInviteError] = useState<string | null>(null)
 
   const isEditing = Boolean(employee)
+  const isDemoAccount = isDemoUser(userEmail)
 
   // Query for availability data when editing an employee
   const { data: availabilityData, isLoading: isAvailabilityLoading, error: availabilityFetchError } = useQuery<AvailabilityResult | null>({
@@ -419,7 +423,9 @@ function AddEditEmployeeDialog({
                   ) : employee.email ? (
                     <div className="space-y-2">
                       <p className="text-xs text-slate-400">This employee has no portal account yet. Send an invite to {employee.email}.</p>
-                      {inviteStatus === 'sent' ? (
+                      {isDemoAccount ? (
+                        <p className="text-xs text-slate-500">Invites are turned off in the demo.</p>
+                      ) : inviteStatus === 'sent' ? (
                         <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-500/40 bg-blue-500/10 px-2.5 py-1 text-xs font-semibold text-blue-300">
                           Invite sent ✓
                         </span>

@@ -14,7 +14,7 @@ function EmployeesPage({ managerProfile }: EmployeesPageProps) {
     )
   }
 
-  return <EmployeesManager organizationId={managerProfile.organization_id} />
+  return <EmployeesManager organizationId={managerProfile.organization_id} userEmail={managerProfile.email} />
 }
 
 export default EmployeesPage

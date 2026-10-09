@@ -27,6 +27,7 @@ export type EmployeeRecord = {
 
 type Props = {
   organizationId: string
+  userEmail?: string | null
 }
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -37,7 +38,7 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   AUD: '$',
 }
 
-function EmployeesManager({ organizationId }: Props) {
+function EmployeesManager({ organizationId, userEmail = null }: Props) {
   const queryClient = useQueryClient()
   const [editingEmployee, setEditingEmployee] = useState<EmployeeRecord | null>(null)
   const [showEmployeeDialog, setShowEmployeeDialog] = useState(false)
@@ -445,6 +446,7 @@ function EmployeesManager({ organizationId }: Props) {
         currency={currency}
         onSaved={handleEmployeeSaved}
         initialTab={employeeDialogTab}
+        userEmail={userEmail}
       />
     </div>
   )
