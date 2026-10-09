@@ -25,7 +25,6 @@ export default function DemoBanner({ email, role, config }: DemoBannerProps) {
     setIsSwitching(true)
     setError(null)
     try {
-      await supabase.auth.signOut()
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: targetEmail,
         password: resolved.demoPassword,
@@ -40,7 +39,7 @@ export default function DemoBanner({ email, role, config }: DemoBannerProps) {
 
   return (
     <div className="flex items-center justify-center gap-3 bg-amber-400 px-3 py-1 text-xs font-medium text-amber-950">
-      <span className="truncate">{error ?? "You're exploring the demo. Changes reset nightly."}</span>
+      <span className="min-w-0 text-center">{error ?? "You're exploring the demo. Changes reset nightly."}</span>
       <button
         type="button"
         disabled={isSwitching}
