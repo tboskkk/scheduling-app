@@ -38,7 +38,7 @@ export default function DemoLoginButtons({ config, onError }: DemoLoginButtonsPr
     <div className="space-y-3">
       <div className="flex items-center gap-3 text-xs uppercase tracking-[0.18em] text-slate-500">
         <span className="h-px flex-1 bg-slate-800" />
-        <span>or explore the demo</span>
+        <span>Try the demo</span>
         <span className="h-px flex-1 bg-slate-800" />
       </div>
       <div className="grid gap-3 sm:grid-cols-2">

@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabaseClient'
 import { isEmailAllowed } from '../lib/auth-utils'
 import { checkRateLimit } from '../lib/security'
 import DemoLoginButtons from '../components/DemoLoginButtons'
+import { getDemoConfig } from '../lib/demo'
 
 type UserRole = 'manager' | 'employee' | null
 
@@ -44,6 +45,10 @@ function AuthPage({ mode = 'login', session, userRole }: AuthPageProps) {
       navigate(dest, { replace: true })
     }
   }, [session, userRole, navigate])
+
+  // Demo block sits above the form on phones (so it is not below the fold)
+  // and moves back below it from md up.
+  const showDemo = authView === 'login' && getDemoConfig().demoMode
 
   const headline = useMemo(() => {
     if (authView === 'register') return 'Create your account'
@@ -121,7 +126,12 @@ function AuthPage({ mode = 'login', session, userRole }: AuthPageProps) {
         </div>
 
         <div className="mt-8 grid gap-6 md:grid-cols-[1.1fr_0.9fr]">
-          <div className="space-y-4">
+          <div className={showDemo ? 'flex flex-col gap-4' : 'space-y-4'}>
+            {showDemo && (
+              <div data-testid="demo-login-block" className="md:order-last">
+                <DemoLoginButtons onError={setAuthError} />
+              </div>
+            )}
           <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-slate-800 bg-slate-900/70 p-6">
             <div>
               <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Account</p>
@@ -174,7 +184,6 @@ function AuthPage({ mode = 'login', session, userRole }: AuthPageProps) {
               {isAuthLoading ? 'Working…' : authView === 'login' ? 'Sign in' : 'Create account'}
             </button>
           </form>
-            {authView === 'login' && <DemoLoginButtons onError={setAuthError} />}
           </div>
 
           <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-900/60 p-6 text-sm text-slate-200">
