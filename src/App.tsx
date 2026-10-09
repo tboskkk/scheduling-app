@@ -212,7 +212,7 @@ function App() {
           {/* Employee routes */}
           <Route path="/employee" element={<Navigate to="/employee/dashboard" replace />} />
           <Route element={<ProtectedRoute session={session} allowedRole="employee" userRole={userRole} isFetchingProfile={isFetchingProfile} />}>
-            <Route element={<EmployeeLayout employeeProfile={employeeProfile} onSignOut={handleSignOut} />}>
+            <Route element={<EmployeeLayout employeeProfile={employeeProfile} onSignOut={handleSignOut} userEmail={session?.user.email ?? null} />}>
               <Route path="/employee/dashboard" element={<EmployeeDashboardPage employeeProfile={employeeProfile} />} />
               <Route path="/employee/schedule" element={<EmployeeSchedulePage employeeProfile={employeeProfile} />} />
               <Route path="/employee/time-off" element={<TimeOffRequestsPage employeeProfile={employeeProfile} />} />

@@ -8,6 +8,7 @@ import type { LocationRecord } from '../LocationsManager'
 import { formatWeekRange, useScheduleStore } from '../schedule/useScheduleStore'
 import { useOrganizationStore } from '../../lib/useOrganizationStore'
 import { OfflineIndicator } from '../OfflineIndicator'
+import DemoBanner from '../DemoBanner'
 import { ErrorDetailsModal } from '../schedule/ErrorDetailsModal'
 import { ConflictSeverity } from '../../lib/rules-engine'
 import { computeFixSuggestions } from '../../lib/fix-suggestions'
@@ -345,6 +346,7 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
         )}
 
         <main className={`flex-1 bg-slate-950/60 transition-all duration-200 ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
+          <DemoBanner email={session.user.email ?? null} role="manager" />
           <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-900/80 backdrop-blur">
             <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">

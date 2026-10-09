@@ -1,0 +1,26 @@
+name: Keep Supabase alive
+
+# Required repository secrets: VITE_SUPABASE_PROJECT_URL,
+# VITE_SUPABASE_PUBLISHABLE_KEY, DEMO_EMAIL, DEMO_PASSWORD.
+on:
+  schedule:
+    - cron: '0 15 * * 1,4'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sign in as the demo manager and read one row
+        env:
+          URL: ${{ secrets.VITE_SUPABASE_PROJECT_URL }}
+          KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          DEMO_EMAIL: ${{ secrets.DEMO_EMAIL }}
+          DEMO_PASSWORD: ${{ secrets.DEMO_PASSWORD }}
+        run: |
+          TOKEN=$(jq -n --arg e "$DEMO_EMAIL" --arg p "$DEMO_PASSWORD" '{email:$e,password:$p}' \
+            | curl -fsS -X POST "$URL/auth/v1/token?grant_type=password" \
+                -H "apikey: $KEY" -H "Content-Type: application/json" -d @- \
+            | jq -er .access_token)
+          curl -fsS "$URL/rest/v1/roles?select=id&limit=1" \
+            -H "apikey: $KEY" -H "Authorization: Bearer $TOKEN"

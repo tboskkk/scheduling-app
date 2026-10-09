@@ -56,15 +56,30 @@ function ShiftTradeRequestsPage({ employeeProfile }: Props) {
         .from('shift_trade_requests')
         .select(`
           *,
-          requesting_employee:employees!shift_trade_requests_requesting_employee_id_fkey(name),
-          target_employee:employees!shift_trade_requests_target_employee_id_fkey(name),
           requesting_shift:shifts!shift_trade_requests_requesting_shift_id_fkey(start_datetime, end_datetime),
           target_shift:shifts!shift_trade_requests_target_shift_id_fkey(start_datetime, end_datetime)
         `)
         .or(`requesting_employee_id.eq.${empId},target_employee_id.eq.${empId}`)
         .order('created_at', { ascending: false })
       if (error) throw new Error(error.message)
-      return (data ?? []) as RequestWithNames[]
+      const rows = (data ?? []) as Omit<RequestWithNames, 'requesting_employee' | 'target_employee'>[]
+      if (rows.length === 0) return []
+
+      // Colleague names come from the public view: employees can only read
+      // their own row of the employees table.
+      const ids = [...new Set(rows.flatMap(r => [r.requesting_employee_id, r.target_employee_id]))]
+      const { data: people, error: peopleError } = await supabase
+        .from('employee_public_profiles')
+        .select('id, name')
+        .in('id', ids)
+      if (peopleError) throw new Error(peopleError.message)
+      const nameById = new Map((people ?? []).map((p: { id: string; name: string }) => [p.id, p.name]))
+      const person = (id: string) => (nameById.has(id) ? { name: nameById.get(id)! } : null)
+      return rows.map(r => ({
+        ...r,
+        requesting_employee: person(r.requesting_employee_id),
+        target_employee: person(r.target_employee_id),
+      }))
     },
     enabled: Boolean(empId),
   })
