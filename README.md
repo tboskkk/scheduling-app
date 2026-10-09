@@ -2,7 +2,7 @@
 
 Staff scheduling for businesses with more than one location. Built with React and Supabase as a portfolio project; it has not been trialled with real businesses yet.
 
-Live demo: link coming soon
+Live demo: https://scheduling-app-czk.pages.dev
 
 ## What it does
 
