@@ -72,7 +72,7 @@ CREATE OR REPLACE FUNCTION private.reset_demo()
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, extensions
+SET search_path = public, extensions, pg_temp
 AS $$
 DECLARE
   -- Config
@@ -170,6 +170,19 @@ BEGIN
   DELETE FROM public.employees               WHERE organization_id = v_org_id;
   DELETE FROM public.roles                   WHERE organization_id = v_org_id;
   DELETE FROM public.locations               WHERE organization_id = v_org_id;
+
+  -- ---------------------------------------------------------------------------
+  -- Tamper hardening: touch only the two demo identities.
+  -- Drop any managers row that would let the demo employee act as a manager,
+  -- and any extra manager in the demo org (e.g. one created by a visitor).
+  -- Unlink either demo login from employee rows in other organizations.
+  -- ---------------------------------------------------------------------------
+  DELETE FROM public.managers
+    WHERE id = v_employee_user_id
+       OR (organization_id = v_org_id AND id <> v_manager_user_id);
+  UPDATE public.employees SET user_id = NULL
+    WHERE user_id IN (v_manager_user_id, v_employee_user_id)
+      AND organization_id <> v_org_id;
 
   -- ---------------------------------------------------------------------------
   -- Demo manager (id = demo manager auth user)
