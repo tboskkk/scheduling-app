@@ -8,6 +8,7 @@ import type { LocationRecord } from '../LocationsManager'
 import { formatWeekRange, useScheduleStore } from '../schedule/useScheduleStore'
 import { useOrganizationStore } from '../../lib/useOrganizationStore'
 import { OfflineIndicator } from '../OfflineIndicator'
+import DemoBanner from '../DemoBanner'
 import { ErrorDetailsModal } from '../schedule/ErrorDetailsModal'
 import { ConflictSeverity } from '../../lib/rules-engine'
 import { computeFixSuggestions } from '../../lib/fix-suggestions'
@@ -228,6 +229,7 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <OfflineIndicator />
+      <DemoBanner email={session.user.email ?? null} role="manager" />
       <div className="flex min-h-screen flex-col md:flex-row">
         <aside
           className={`fixed top-0 left-0 h-screen z-40 flex flex-col border-r border-slate-800/80 bg-slate-900/90 p-4 shadow-2xl transition-transform duration-200 md:z-auto md:bg-slate-900/70 md:shadow-none ${isMobileNavOpen ? 'translate-x-0 w-72' : '-translate-x-full w-72 md:translate-x-0'} ${isSidebarCollapsed ? 'md:w-16 md:items-center md:px-3' : 'md:w-64 md:px-4 md:pr-6'}`}

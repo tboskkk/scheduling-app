@@ -2,13 +2,15 @@ import { useQuery } from '@tanstack/react-query'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabaseClient'
 import type { EmployeeProfile } from '../../types'
+import DemoBanner from '../DemoBanner'
 
 interface EmployeeLayoutProps {
   employeeProfile: EmployeeProfile | null
   onSignOut: () => Promise<void>
+  userEmail?: string | null
 }
 
-function EmployeeLayout({ employeeProfile, onSignOut }: EmployeeLayoutProps) {
+function EmployeeLayout({ employeeProfile, onSignOut, userEmail = null }: EmployeeLayoutProps) {
   const navigate = useNavigate()
   const empId = employeeProfile?.id ?? null
 
@@ -98,6 +100,7 @@ function EmployeeLayout({ employeeProfile, onSignOut }: EmployeeLayoutProps) {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
+      <DemoBanner email={userEmail} role="employee" />
       <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-900/95 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
           <NavLink to="/employee/dashboard" className="flex items-center gap-2">
