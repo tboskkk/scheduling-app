@@ -87,7 +87,7 @@ function QuickAddShiftDialog({ isOpen, onClose, date, timezone, employee, locati
     const [sh, sm] = s.split(':').map(Number)
     const [eh, em] = e.split(':').map(Number)
     
-    let startMins = sh * 60 + sm
+    const startMins = sh * 60 + sm
     let endMins = eh * 60 + em
     
     if (endMins <= startMins) endMins += 24 * 60
@@ -97,8 +97,8 @@ function QuickAddShiftDialog({ isOpen, onClose, date, timezone, employee, locati
     const breakEndMins = mid + 15
     
     const formatMins = (m: number) => {
-      let h = Math.floor(m / 60) % 24
-      let min = m % 60
+      const h = Math.floor(m / 60) % 24
+      const min = m % 60
       return `${h.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`
     }
     
@@ -144,13 +144,13 @@ function QuickAddShiftDialog({ isOpen, onClose, date, timezone, employee, locati
           return
         }
         
-        let bStart = new Date(toZonedISOString(date, breakStartTime, timezone))
+        const bStart = new Date(toZonedISOString(date, breakStartTime, timezone))
         if (bStart < new Date(startIso)) {
            bStart.setDate(bStart.getDate() + 1)
         }
         breakStartIso = bStart.toISOString()
         
-        let bEnd = new Date(toZonedISOString(date, breakEndTime, timezone))
+        const bEnd = new Date(toZonedISOString(date, breakEndTime, timezone))
         if (bEnd <= bStart) {
            bEnd.setDate(bEnd.getDate() + 1)
         }

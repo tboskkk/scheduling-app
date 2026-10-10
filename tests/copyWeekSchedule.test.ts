@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import * as fc from 'fast-check'
 import { copyShiftsToNextWeek } from '../src/lib/schedule-utils'
 import { ShiftRecord } from '../src/types'
-import { toZonedISOString, localTimeLabel } from '../src/components/schedule/time'
+import { localTimeLabel } from '../src/components/schedule/time'
 
 describe('Property 27: Copy Week Schedule Equivalence', () => {
   const timezone = 'America/New_York'

@@ -5,8 +5,8 @@ import { analytics } from '../src/lib/analytics';
 
 describe('Security Properties', () => {
   const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-  const consoleGroupSpy = vi.spyOn(console, 'groupCollapsed').mockImplementation(() => {});
-  const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+  vi.spyOn(console, 'groupCollapsed').mockImplementation(() => {});
+  vi.spyOn(console, 'error').mockImplementation(() => {});
 
   afterEach(() => {
     vi.clearAllMocks();

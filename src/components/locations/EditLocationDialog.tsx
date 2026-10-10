@@ -116,7 +116,7 @@ function EditLocationDialog({ isOpen, onClose, location, onUpdated, onDeleted }:
   const browserTimezone = useMemo(() => {
     try {
       return Intl.DateTimeFormat().resolvedOptions().timeZone
-    } catch (error) {
+    } catch {
       return null
     }
   }, [])

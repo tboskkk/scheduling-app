@@ -1,6 +1,5 @@
 import { validateSchedule, getShiftDurationHours, checkDailyOvertime } from '../src/lib/rules-engine'
 import type { ShiftRecord } from '../src/types'
-import { ConflictSeverity } from '../src/lib/rules-engine'
 
 describe('Daily Overtime Bug Investigation', () => {
   it('should NOT show overtime for 9h shift with 1h break (net 8h)', () => {

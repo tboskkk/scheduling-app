@@ -106,7 +106,7 @@ function QuickAddLocationDialog({ isOpen, onClose, organizationId, onCreated }: 
   const browserTimezone = useMemo(() => {
     try {
       return Intl.DateTimeFormat().resolvedOptions().timeZone
-    } catch (error) {
+    } catch {
       return null
     }
   }, [])

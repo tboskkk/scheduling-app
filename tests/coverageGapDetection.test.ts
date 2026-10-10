@@ -3,7 +3,7 @@ import { validateSchedule, ConflictSeverity } from '../src/lib/rules-engine'
 import type { ShiftRecord, GridEmployee, CoverageRequirement } from '../src/types'
 
 describe('Property 14: Coverage Gap Detection', () => {
-  const weekStart = new Date('2024-01-01T00:00:00Z') // Monday
+  // weekStart: 2024-01-01 (Monday)
   const employees: GridEmployee[] = [
     { id: 'emp1', name: 'Alice', is_floating: false, home_location_id: 'loc1' },
     { id: 'emp2', name: 'Bob', is_floating: false, home_location_id: 'loc1' }

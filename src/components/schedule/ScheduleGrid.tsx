@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { DndContext, type DragEndEvent, type DragOverEvent, type DragStartEvent, MouseSensor, TouchSensor, useDroppable, useSensor, useSensors } from '@dnd-kit/core'
+import { DndContext, type DragEndEvent, type DragOverEvent, MouseSensor, TouchSensor, useDroppable, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -806,7 +806,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
     return { ...shift, employee_id: targetEmployeeId, start_datetime: startIso, end_datetime: endIso }
   }
 
-  const handleDragStart = (_event: DragStartEvent) => {
+  const handleDragStart = () => {
     // No-op for now
   }
 
