@@ -8,15 +8,11 @@ function EmployeeSetupPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [tokenType, setTokenType] = useState<string | null>(null)
+  // Read the hash directly to determine token type for messaging
+  const [tokenType] = useState<string | null>(() => new URLSearchParams(window.location.hash.replace('#', '')).get('type'))
   const [sessionReady, setSessionReady] = useState(false)
 
   useEffect(() => {
-    // Read the hash directly to determine token type for messaging
-    const hash = window.location.hash
-    const params = new URLSearchParams(hash.replace('#', ''))
-    setTokenType(params.get('type'))
-
     // Only mark ready if the session came from an invite/recovery token in the URL hash.
     // Pre-authenticated users (e.g. a manager navigating here directly) should not be
     // able to use this page to change their password without a token.
@@ -43,7 +39,7 @@ function EmployeeSetupPage() {
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [navigate])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
