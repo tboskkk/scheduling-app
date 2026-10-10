@@ -19,9 +19,12 @@ type ManagerContext = {
   client: SupabaseClient
 }
 
-const admin = createClient(supabaseUrl, secretKey, {
-  auth: { autoRefreshToken: false, persistSession: false },
-})
+// Created only with credentials so module load never throws (suites skip via hasIntegrationCreds).
+const admin: SupabaseClient = hasIntegrationCreds
+  ? createClient(supabaseUrl, secretKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
+  : (null as never)
 
 const createdUserIds: string[] = []
 const createdOrgIds: string[] = []
