@@ -375,7 +375,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
               type="text"
               value={orgName}
               onChange={e => setOrgName(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-hidden"
               placeholder="e.g. Downtown Cafe"
               autoFocus
             />
@@ -387,7 +387,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
               <select
                 value={settings.week_start_day}
                 onChange={e => setSettings({ ...settings, week_start_day: parseInt(e.target.value) })}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-hidden"
               >
                 <option value={0}>Sunday</option>
                 <option value={1}>Monday</option>
@@ -403,7 +403,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
               <select
                 value={settings.time_format}
                 onChange={e => setSettings({ ...settings, time_format: e.target.value as '12h' | '24h' })}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-hidden"
               >
                 <option value="12h">12-hour (AM/PM)</option>
                 <option value="24h">24-hour</option>
@@ -441,7 +441,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                   
                   if (val !== '') setSettings(s)
                 }}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-hidden"
                 defaultValue=""
               >
                 <option value="">-- Select Region --</option>
@@ -469,7 +469,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                   <label className="block text-xs text-slate-400">Weekly Overtime</label>
                   <div className="group relative">
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500 hover:text-slate-300 cursor-help"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 border border-slate-700 rounded shadow-xl text-xs text-slate-300 hidden group-hover:block z-50 pointer-events-none">
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 border border-slate-700 rounded-sm shadow-xl text-xs text-slate-300 hidden group-hover:block z-50 pointer-events-none">
                       Total hours an employee can work in a week before overtime rates apply.
                     </div>
                   </div>
@@ -479,7 +479,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                   value={settings.weekly_overtime_threshold}
                   onChange={e => setSettings({ ...settings, weekly_overtime_threshold: Math.min(168, Math.max(0, parseInt(e.target.value) || 0)) })}
                   onBlur={(e) => (e.target.value = Number(e.target.value).toString())}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm outline-hidden focus:border-blue-500"
                 />
               </div>
               <div>
@@ -487,7 +487,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                   <label className="block text-xs text-slate-400">Daily Overtime</label>
                   <div className="group relative">
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500 hover:text-slate-300 cursor-help"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 border border-slate-700 rounded shadow-xl text-xs text-slate-300 hidden group-hover:block z-50 pointer-events-none">
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 border border-slate-700 rounded-sm shadow-xl text-xs text-slate-300 hidden group-hover:block z-50 pointer-events-none">
                       Hours an employee can work in a single day before overtime rates apply.
                     </div>
                   </div>
@@ -497,7 +497,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                   value={settings.daily_overtime_threshold}
                   onChange={e => setSettings({ ...settings, daily_overtime_threshold: Math.min(24, Math.max(0, parseInt(e.target.value) || 0)) })}
                   onBlur={(e) => (e.target.value = Number(e.target.value).toString())}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm outline-hidden focus:border-blue-500"
                 />
               </div>
               <div>
@@ -505,7 +505,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                   <label className="block text-xs text-slate-400">Min Rest Between Shifts</label>
                   <div className="group relative">
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500 hover:text-slate-300 cursor-help"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 border border-slate-700 rounded shadow-xl text-xs text-slate-300 hidden group-hover:block z-50 pointer-events-none">
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 border border-slate-700 rounded-sm shadow-xl text-xs text-slate-300 hidden group-hover:block z-50 pointer-events-none">
                       Minimum required hours of rest between the end of one shift and the start of the next.
                     </div>
                   </div>
@@ -515,7 +515,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                   value={settings.min_rest_period_hours}
                   onChange={e => setSettings({ ...settings, min_rest_period_hours: Math.min(168, Math.max(0, parseInt(e.target.value) || 0)) })}
                   onBlur={(e) => (e.target.value = Number(e.target.value).toString())}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-blue-500"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm outline-hidden focus:border-blue-500"
                 />
               </div>
               <div className="flex items-center pt-6">
@@ -524,7 +524,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                     type="checkbox"
                     checked={settings.enable_california_rules}
                     onChange={e => setSettings({ ...settings, enable_california_rules: e.target.checked })}
-                    className="rounded bg-slate-950 border-slate-700"
+                    className="rounded-sm bg-slate-950 border-slate-700"
                   />
                   <span className="text-sm text-slate-300">Enable California Rules</span>
                 </label>
@@ -555,7 +555,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
               value={newRoleName}
               onChange={e => setNewRoleName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && addRole()}
-              className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+              className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-hidden"
               placeholder="Add a role (e.g. Dishwasher)"
               autoFocus
             />
@@ -594,7 +594,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
               value={newLocationName}
               onChange={e => setNewLocationName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && addLocation()}
-              className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+              className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-hidden"
               placeholder="Add a location (e.g. West Side Branch)"
               autoFocus
             />
@@ -672,7 +672,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                     key={i}
                     type="button"
                     onClick={() => toggleDay(i)}
-                    className={`px-2.5 py-1.5 rounded text-xs font-medium transition-all ${
+                    className={`px-2.5 py-1.5 rounded-sm text-xs font-medium transition-all ${
                       covDays.includes(i)
                         ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
                         : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
@@ -730,7 +730,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
               const r = roles.find(x => x.id === cov.roleId)
               const l = locations.find(x => x.id === cov.locationId)
               return (
-                <div key={idx} className="flex items-center justify-between bg-slate-800/50 border border-slate-700 rounded p-3 text-sm">
+                <div key={idx} className="flex items-center justify-between bg-slate-800/50 border border-slate-700 rounded-sm p-3 text-sm">
                   <div>
                     <div className="text-white font-medium">{r?.name} at {l?.name}</div>
                     <div className="text-xs text-slate-400">
@@ -821,7 +821,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                     type="checkbox"
                     checked={empIsFloating}
                     onChange={e => setEmpIsFloating(e.target.checked)}
-                    className="rounded bg-slate-950 border-slate-700"
+                    className="rounded-sm bg-slate-950 border-slate-700"
                   />
                   <span className="text-sm text-slate-300">Floating (can work any location)</span>
                 </label>
@@ -836,7 +836,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                     key={role.id}
                     type="button"
                     onClick={() => toggleEmployeeRole(role.id)}
-                    className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${
+                    className={`px-3 py-1.5 rounded-sm text-xs font-medium transition-all ${
                       empRoles.includes(role.id)
                         ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
                         : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
@@ -863,7 +863,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
               const empLocationName = emp.homeLocationId ? locations.find(l => l.id === emp.homeLocationId)?.name : 'Unassigned'
               
               return (
-                <div key={idx} className="flex items-center justify-between bg-slate-800/50 border border-slate-700 rounded p-3 text-sm">
+                <div key={idx} className="flex items-center justify-between bg-slate-800/50 border border-slate-700 rounded-sm p-3 text-sm">
                   <div>
                     <div className="text-white font-medium">{emp.name}</div>
                     <div className="text-xs text-slate-400">
@@ -905,7 +905,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 <div className="text-slate-400 text-xs uppercase tracking-wider mb-2">Roles ({roles.length})</div>
                 <div className="flex flex-wrap gap-2">
                   {roles.map(r => (
-                    <span key={r.id} className="bg-slate-700 text-slate-200 px-2 py-1 rounded text-xs">{r.name}</span>
+                    <span key={r.id} className="bg-slate-700 text-slate-200 px-2 py-1 rounded-sm text-xs">{r.name}</span>
                   ))}
                 </div>
               </div>
@@ -954,14 +954,14 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-white rounded-xl font-bold shadow-lg shadow-emerald-500/20 transition-all hover:translate-y-[-1px] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-white rounded-xl font-bold shadow-lg shadow-emerald-500/20 transition-all hover:-translate-y-px disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? 'Creating Organization...' : 'Launch Dashboard'}
           </button>
         ) : (
           <button
             onClick={handleNext}
-            className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold shadow-lg shadow-blue-600/20 transition-all hover:translate-y-[-1px]"
+            className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold shadow-lg shadow-blue-600/20 transition-all hover:-translate-y-px"
           >
             Next Step
           </button>

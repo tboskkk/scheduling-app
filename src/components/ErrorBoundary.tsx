@@ -48,14 +48,14 @@ export class ErrorBoundary extends Component<Props, State> {
             <div className="mt-5">
               <button
                 onClick={() => window.location.reload()}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 Refresh Page
               </button>
             </div>
             {import.meta.env.DEV && this.state.error && (
               <div className="mt-8 text-left">
-                <details className="whitespace-pre-wrap text-xs text-red-600 bg-red-50 p-4 rounded border border-red-200 overflow-auto max-h-64">
+                <details className="whitespace-pre-wrap text-xs text-red-600 bg-red-50 p-4 rounded-sm border border-red-200 overflow-auto max-h-64">
                   <summary className="cursor-pointer font-bold mb-2">Error Details</summary>
                   {this.state.error.toString()}
                 </details>

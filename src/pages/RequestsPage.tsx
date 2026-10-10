@@ -214,7 +214,7 @@ function RequestsPage({ managerProfile }: Props) {
                         placeholder="Optional note to employee"
                         value={noteInput[req.id] ?? ''}
                         onChange={(e) => setNoteInput(prev => ({ ...prev, [req.id]: e.target.value }))}
-                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-none focus:border-blue-500"
+                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-hidden focus:border-blue-500"
                       />
                       <div className="flex gap-2">
                         <button
@@ -306,7 +306,7 @@ function RequestsPage({ managerProfile }: Props) {
                         placeholder="Optional note to employees"
                         value={noteInput[req.id] ?? ''}
                         onChange={(e) => setNoteInput(prev => ({ ...prev, [req.id]: e.target.value }))}
-                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-none focus:border-blue-500"
+                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-hidden focus:border-blue-500"
                       />
                       <div className="flex gap-2">
                         <button

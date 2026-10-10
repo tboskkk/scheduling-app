@@ -72,7 +72,7 @@ export function ErrorDetailsModal({ isOpen, onClose, errors, title = "Schedule I
                     employeeName: s.employeeName,
                     requirementId: error.meta?.requirementId,
                   })}
-                  className={`rounded border px-2 py-0.5 text-xs ${c.fix} transition-colors`}
+                  className={`rounded-sm border px-2 py-0.5 text-xs ${c.fix} transition-colors`}
                 >
                   + {s.employeeName}
                 </button>
@@ -85,7 +85,7 @@ export function ErrorDetailsModal({ isOpen, onClose, errors, title = "Schedule I
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs">
       <div className="mx-4 w-full max-w-2xl rounded-lg border border-slate-700 bg-slate-900 shadow-xl">
         <div className="flex items-center justify-between border-b border-slate-700 px-6 py-4">
           <h2 className="text-lg font-semibold text-white">{title}</h2>
@@ -99,7 +99,7 @@ export function ErrorDetailsModal({ isOpen, onClose, errors, title = "Schedule I
           </button>
         </div>
 
-        <div className="max-h-[28rem] overflow-y-auto p-6">
+        <div className="max-h-112 overflow-y-auto p-6">
           {errors.length === 0 ? (
             <p className="text-center text-slate-400">No issues found</p>
           ) : (

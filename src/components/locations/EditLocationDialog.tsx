@@ -377,7 +377,7 @@ function EditLocationDialog({ isOpen, onClose, location, onUpdated, onDeleted }:
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Downtown Flagship"
                 required
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
               />
             </label>
 
@@ -388,7 +388,7 @@ function EditLocationDialog({ isOpen, onClose, location, onUpdated, onDeleted }:
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="123 Market Street, San Francisco, CA"
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
               />
             </label>
 
@@ -412,7 +412,7 @@ function EditLocationDialog({ isOpen, onClose, location, onUpdated, onDeleted }:
                 value={timezoneQuery}
                 onChange={(e) => setTimezoneQuery(e.target.value)}
                 placeholder="Search (e.g., Regina, London, Tokyo)"
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
               />
 
               <select
@@ -420,7 +420,7 @@ function EditLocationDialog({ isOpen, onClose, location, onUpdated, onDeleted }:
                 onChange={(e) => setTimezone(e.target.value)}
                 required
                 size={Math.min(12, Math.max(6, (showAllZones ? filteredTimezones : suggestedTimezones).length + 2))}
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
               >
                 <optgroup label="Suggested (region-aware)">
                   {suggestedTimezones.map((zone) => (
@@ -485,7 +485,7 @@ function EditLocationDialog({ isOpen, onClose, location, onUpdated, onDeleted }:
                   <select
                     value={selectedRole}
                     onChange={(e) => setSelectedRole(e.target.value)}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
                   >
                     <option value="">Select role...</option>
                     {roles.map((role) => (
@@ -502,7 +502,7 @@ function EditLocationDialog({ isOpen, onClose, location, onUpdated, onDeleted }:
                     min="1"
                     value={minEmployees}
                     onChange={(e) => setMinEmployees(parseInt(e.target.value))}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
                   />
                 </label>
               </div>
@@ -526,7 +526,7 @@ function EditLocationDialog({ isOpen, onClose, location, onUpdated, onDeleted }:
                       key={i}
                       type="button"
                       onClick={() => toggleDay(i)}
-                      className={`px-2.5 py-1.5 rounded text-xs font-medium transition-all ${
+                      className={`px-2.5 py-1.5 rounded-sm text-xs font-medium transition-all ${
                         selectedDays.includes(i)
                           ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
                           : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
@@ -545,7 +545,7 @@ function EditLocationDialog({ isOpen, onClose, location, onUpdated, onDeleted }:
                     type="time"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
                   />
                 </label>
                 <label className="space-y-1">
@@ -554,7 +554,7 @@ function EditLocationDialog({ isOpen, onClose, location, onUpdated, onDeleted }:
                     type="time"
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
                   />
                 </label>
               </div>
@@ -592,16 +592,16 @@ function EditLocationDialog({ isOpen, onClose, location, onUpdated, onDeleted }:
                   return (
                     <div key={role.id} className="bg-slate-900/30 rounded-lg border border-slate-800 overflow-hidden">
                       <div className="bg-slate-800/50 px-4 py-3 border-b border-slate-700/50 flex items-center gap-3">
-                        <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: role.color }} />
+                        <div className="w-3 h-3 rounded-full shadow-xs" style={{ backgroundColor: role.color }} />
                         <h5 className="font-medium text-white">{role.name}</h5>
                         <span className="text-xs text-slate-400 ml-auto">{roleRules.length} rules</span>
                       </div>
                       
                       <div className="p-2 space-y-2">
                         {roleRules.map(rule => (
-                          <div key={rule.id} className="flex items-center justify-between bg-slate-800/30 hover:bg-slate-800/50 p-3 rounded border border-slate-700/50 transition-colors group">
+                          <div key={rule.id} className="flex items-center justify-between bg-slate-800/30 hover:bg-slate-800/50 p-3 rounded-sm border border-slate-700/50 transition-colors group">
                             <div className="flex items-center gap-3">
-                              <div className="flex flex-col items-center justify-center w-10 h-10 bg-slate-800 rounded text-slate-300 font-bold text-xs border border-slate-700">
+                              <div className="flex flex-col items-center justify-center w-10 h-10 bg-slate-800 rounded-sm text-slate-300 font-bold text-xs border border-slate-700">
                                 <span>{DAYS[rule.day_of_week].slice(0, 3)}</span>
                               </div>
                               <div>

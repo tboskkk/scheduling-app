@@ -122,7 +122,7 @@ export default function CoverageRulesManager() {
         <select
           value={selectedLocationId}
           onChange={(e) => setSelectedLocationId(e.target.value)}
-          className="rounded bg-slate-900 border-slate-600 text-white px-3 py-1.5 min-w-[200px]"
+          className="rounded-sm bg-slate-900 border-slate-600 text-white px-3 py-1.5 min-w-[200px]"
         >
           {locations.map(loc => (
             <option key={loc.id} value={loc.id}>{loc.name}</option>
@@ -146,7 +146,7 @@ export default function CoverageRulesManager() {
               <select
                 value={selectedRole}
                 onChange={e => setSelectedRole(e.target.value)}
-                className="w-full rounded bg-slate-800 border-slate-700 text-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                className="w-full rounded-sm bg-slate-800 border-slate-700 text-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-hidden"
                 required
               >
                 <option value="">Select Role...</option>
@@ -173,7 +173,7 @@ export default function CoverageRulesManager() {
                     key={i}
                     type="button"
                     onClick={() => toggleDay(i)}
-                    className={`px-2.5 py-1.5 rounded text-xs font-medium transition-all ${
+                    className={`px-2.5 py-1.5 rounded-sm text-xs font-medium transition-all ${
                       selectedDays.includes(i)
                         ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
                         : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
@@ -195,7 +195,7 @@ export default function CoverageRulesManager() {
                   type="time"
                   value={startTime}
                   onChange={e => setStartTime(e.target.value)}
-                  className="w-full rounded bg-slate-800 border-slate-700 text-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  className="w-full rounded-sm bg-slate-800 border-slate-700 text-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-hidden"
                   required
                 />
               </div>
@@ -205,7 +205,7 @@ export default function CoverageRulesManager() {
                   type="time"
                   value={endTime}
                   onChange={e => setEndTime(e.target.value)}
-                  className="w-full rounded bg-slate-800 border-slate-700 text-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  className="w-full rounded-sm bg-slate-800 border-slate-700 text-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-hidden"
                   required
                 />
               </div>
@@ -228,7 +228,7 @@ export default function CoverageRulesManager() {
                   value={minEmployees}
                   onChange={e => setMinEmployees(parseInt(e.target.value))}
                   onBlur={(e) => (e.target.value = Number(e.target.value).toString())}
-                  className="w-16 rounded bg-slate-800 border-slate-700 text-white px-2 py-1 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  className="w-16 rounded-sm bg-slate-800 border-slate-700 text-white px-2 py-1 text-sm text-center focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-hidden"
                   required
                 />
               </div>
@@ -265,16 +265,16 @@ export default function CoverageRulesManager() {
                 return (
                   <div key={role.id} className="bg-slate-900/30 rounded-lg border border-slate-800 overflow-hidden">
                     <div className="bg-slate-800/50 px-4 py-3 border-b border-slate-700/50 flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: role.color }} />
+                      <div className="w-3 h-3 rounded-full shadow-xs" style={{ backgroundColor: role.color }} />
                       <h4 className="font-medium text-white">{role.name}</h4>
                       <span className="text-xs text-slate-400 ml-auto">{roleRules.length} shifts</span>
                     </div>
                     
                     <div className="p-2 grid grid-cols-1 md:grid-cols-2 gap-2">
                       {roleRules.map(rule => (
-                        <div key={rule.id} className="flex items-center justify-between bg-slate-800/30 hover:bg-slate-800/50 p-3 rounded border border-slate-700/50 transition-colors group">
+                        <div key={rule.id} className="flex items-center justify-between bg-slate-800/30 hover:bg-slate-800/50 p-3 rounded-sm border border-slate-700/50 transition-colors group">
                           <div className="flex items-center gap-3">
-                            <div className="flex flex-col items-center justify-center w-10 h-10 bg-slate-800 rounded text-slate-300 font-bold text-xs border border-slate-700">
+                            <div className="flex flex-col items-center justify-center w-10 h-10 bg-slate-800 rounded-sm text-slate-300 font-bold text-xs border border-slate-700">
                               <span>{days[rule.day_of_week].slice(0, 3)}</span>
                             </div>
                             <div>

@@ -106,7 +106,7 @@ function EmployeeSetupPage() {
               placeholder="At least 8 characters"
               required
               minLength={8}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-slate-100 outline-none ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-slate-100 outline-hidden ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
             />
           </div>
 
@@ -118,7 +118,7 @@ function EmployeeSetupPage() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Repeat your password"
               required
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-slate-100 outline-none ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-slate-100 outline-hidden ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
             />
           </div>
 

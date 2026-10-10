@@ -74,7 +74,7 @@ function ScheduleCell({ employee, dayIndex, dayDate, shifts, onOpenQuickAdd, ren
         <button
           type="button"
           onClick={handlePasteClick}
-          className="absolute right-1 top-1 z-30 rounded bg-blue-600 px-2 py-0.5 text-[10px] font-bold text-white opacity-0 shadow-sm transition group-hover:opacity-100"
+          className="absolute right-1 top-1 z-30 rounded-sm bg-blue-600 px-2 py-0.5 text-[10px] font-bold text-white opacity-0 shadow-xs transition group-hover:opacity-100"
           title="Paste shifts starting here"
         >
           Paste
@@ -1184,7 +1184,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
                 <span className="hidden sm:inline text-xs font-medium text-slate-400 uppercase tracking-wider">Quick Actions:</span>
                 <button
                   onClick={handleCopyLastWeek}
-                  className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-white hover:bg-blue-500 transition-colors shadow-sm"
+                  className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-white hover:bg-blue-500 transition-colors shadow-xs"
                   title="Copy all shifts from the previous week to this week"
                 >
                   <span>📋</span>
@@ -1196,7 +1196,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
                     setIsSelectionMode(!isSelectionMode)
                     if (isSelectionMode) clearSelection()
                   }}
-                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold transition-colors shadow-sm ${
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold transition-colors shadow-xs ${
                     isSelectionMode
                       ? 'bg-orange-600 text-white hover:bg-orange-500'
                       : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
@@ -1213,7 +1213,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
                 <span className="hidden sm:inline text-xs font-medium text-slate-400 uppercase tracking-wider">Export & Publish:</span>
                 <button
                   onClick={handleExportPDF}
-                  className="flex items-center gap-1.5 rounded-lg bg-slate-700 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-slate-200 hover:bg-slate-600 transition-colors shadow-sm"
+                  className="flex items-center gap-1.5 rounded-lg bg-slate-700 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-slate-200 hover:bg-slate-600 transition-colors shadow-xs"
                   title="Download schedule as PDF for printing or sharing"
                 >
                   <span>📄</span>
@@ -1222,7 +1222,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
                 </button>
                 <button
                   onClick={handlePublish}
-                  className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                  className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-xs"
                   disabled={hardBlockCount > 0}
                   title={hardBlockCount > 0 ? 'Fix errors before publishing' : 'Make schedule visible to employees'}
                 >
@@ -1234,7 +1234,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
             
             {/* Clipboard Status */}
             {clipboardShifts.length > 0 && (
-              <div className="flex flex-shrink-0 items-center gap-2 rounded-lg bg-green-600/20 border border-green-500/30 px-3 py-2 text-sm font-medium text-green-300">
+              <div className="flex shrink-0 items-center gap-2 rounded-lg bg-green-600/20 border border-green-500/30 px-3 py-2 text-sm font-medium text-green-300">
                 <span>📎</span>
                 <span className="hidden sm:inline">{clipboardShifts.length} shifts copied</span>
                 <span className="sm:hidden">{clipboardShifts.length}</span>
@@ -1267,7 +1267,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
                 key={idx}
                 type="button"
                 onClick={() => setMobileSelectedDay(idx)}
-                className={`flex-shrink-0 rounded-lg px-3 py-2 text-center transition ${
+                className={`shrink-0 rounded-lg px-3 py-2 text-center transition ${
                   mobileSelectedDay === idx
                     ? 'bg-blue-600 text-white'
                     : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
@@ -1292,7 +1292,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
               type="button"
               onClick={() => setMobileSelectedDay((d) => Math.max(0, d - 1))}
               disabled={mobileSelectedDay === 0}
-              className="rounded p-1 text-xl leading-none text-slate-400 hover:text-white disabled:opacity-30 transition"
+              className="rounded-sm p-1 text-xl leading-none text-slate-400 hover:text-white disabled:opacity-30 transition"
             >
               ‹
             </button>
@@ -1301,7 +1301,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
               type="button"
               onClick={() => setMobileSelectedDay((d) => Math.min(6, d + 1))}
               disabled={mobileSelectedDay === 6}
-              className="rounded p-1 text-xl leading-none text-slate-400 hover:text-white disabled:opacity-30 transition"
+              className="rounded-sm p-1 text-xl leading-none text-slate-400 hover:text-white disabled:opacity-30 transition"
             >
               ›
             </button>
@@ -1454,7 +1454,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
                                         setShowErrorDetails(true)
                                       }
                                     }}
-                                    className="cursor-pointer rounded border border-amber-500/30 bg-amber-500/10 px-2 py-1 hover:bg-amber-500/20"
+                                    className="cursor-pointer rounded-sm border border-amber-500/30 bg-amber-500/10 px-2 py-1 hover:bg-amber-500/20"
                                   >
                                     <div className="flex items-center gap-1">
                                       <span className="text-[10px] text-amber-400">⚠</span>
