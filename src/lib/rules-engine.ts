@@ -8,13 +8,20 @@ export const ConflictSeverity = {
 
 export type ConflictSeverity = (typeof ConflictSeverity)[keyof typeof ConflictSeverity]
 
+export interface ValidationMeta {
+  requirementId?: string
+  startTime?: string
+  endTime?: string
+  missingCount?: number
+}
+
 export interface ValidationError {
   id: string
   shiftId?: string // Optional for global/coverage errors
   severity: ConflictSeverity
   message: string
   ruleType: string
-  meta?: any // For extra info like coverage details
+  meta?: ValidationMeta // For extra info like coverage details
 }
 
 export interface ValidationConfig {

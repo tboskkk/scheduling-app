@@ -18,9 +18,9 @@ describe('Environment Variable Security', () => {
           const isValid = !!mockEnv.supabaseUrl && !!mockEnv.supabaseKey;
           
           if (isValid) {
-            expect(() => validateEnv(mockEnv as any)).not.toThrow();
+            expect(() => validateEnv(mockEnv as never)).not.toThrow();
           } else {
-            expect(() => validateEnv(mockEnv as any)).toThrow(/Missing required environment variables/);
+            expect(() => validateEnv(mockEnv as never)).toThrow(/Missing required environment variables/);
           }
         }
       )

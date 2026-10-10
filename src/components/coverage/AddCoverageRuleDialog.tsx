@@ -26,7 +26,7 @@ type AddCoverageRuleDialogProps = {
   organizationId: string
   roles: RoleInfo[]
   locations: LocationInfo[]
-  onCreated: (rule: any) => void
+  onCreated: (rule: unknown) => void
 }
 
 function AddCoverageRuleDialog({ isOpen, onClose, organizationId, roles, locations, onCreated }: AddCoverageRuleDialogProps) {

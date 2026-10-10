@@ -77,7 +77,7 @@ type QuickAddLocationDialogProps = {
   isOpen: boolean
   onClose: () => void
   organizationId: string
-  onCreated: (location: any) => void
+  onCreated: (location: unknown) => void
 }
 
 function QuickAddLocationDialog({ isOpen, onClose, organizationId, onCreated }: QuickAddLocationDialogProps) {

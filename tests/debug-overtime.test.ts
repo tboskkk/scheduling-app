@@ -1,4 +1,5 @@
-import { validateSchedule, getShiftDurationHours, checkDailyOvertime } from '../src/lib/rules-engine'
+import { describe, it, expect } from 'vitest'
+import { validateSchedule, getShiftDurationHours, checkDailyOvertime, type ValidationConfig } from '../src/lib/rules-engine'
 import type { ShiftRecord } from '../src/types'
 
 describe('Daily Overtime Bug Investigation', () => {
@@ -70,11 +71,11 @@ describe('Daily Overtime Bug Investigation', () => {
     console.log(`getShiftDurationHours result: ${duration}h`)
     
     // Test checkDailyOvertime directly
-    const config = { maxDailyHours: 8 }
+    const config = { maxDailyHours: 8 } as ValidationConfig
     const errors = checkDailyOvertime([shift], config)
     console.log(`checkDailyOvertime errors: ${errors.length}`)
     if (errors.length > 0) {
-      console.log('Error messages:', errors.map((e: any) => e.message))
+      console.log('Error messages:', errors.map((e) => e.message))
     }
     
     // Test full validateSchedule

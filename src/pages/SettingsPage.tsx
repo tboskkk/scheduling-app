@@ -19,7 +19,7 @@ function SettingsPage() {
     }
   }, [organization])
 
-  const handleChange = (key: keyof OrganizationSettings, value: any) => {
+  const handleChange = <K extends keyof OrganizationSettings>(key: K, value: OrganizationSettings[K]) => {
     if (!localSettings) return
     setLocalSettings({ ...localSettings, [key]: value })
   }

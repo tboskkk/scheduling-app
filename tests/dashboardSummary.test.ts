@@ -17,6 +17,7 @@ const defaultSettings: OrganizationSettings = {
   enable_california_rules: false,
   time_format: '12h',
   currency: 'CAD',
+  quick_shifts: [],
 }
 
 describe('Property 22: Dashboard Conflict Count Accuracy', () => {

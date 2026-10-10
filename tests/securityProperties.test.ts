@@ -28,7 +28,7 @@ describe('Security Properties', () => {
 
     expect(loggedContext).toBeDefined();
     if (loggedContext) {
-      const ctx = loggedContext as any;
+      const ctx = loggedContext as Record<string, unknown>;
       expect(ctx.password).toBe('[REDACTED]');
       expect(ctx.token).toBe('[REDACTED]');
       expect(ctx.other).toBe('safe info');
@@ -52,7 +52,7 @@ describe('Security Properties', () => {
 
     expect(loggedContext).toBeDefined();
     if (loggedContext) {
-      const ctx = loggedContext as any;
+      const ctx = loggedContext as Record<string, unknown>;
       expect(ctx.password).toBe('[REDACTED]');
       expect(ctx.accessToken).toBe('[REDACTED]');
       expect(ctx.secretKey).toBe('[REDACTED]');
@@ -87,8 +87,8 @@ describe('Security Properties', () => {
              // Check that sensitive fields are redacted if they match the sensitive keys list in logger
              // Note: 'email' and 'userId' are NOT in the default sensitive keys list in logger.ts
              // But 'password' IS.
-             expect((loggedProps as any).password).toBe('[REDACTED]');
-             expect((loggedProps as any).action).toBe(properties.action);
+             expect((loggedProps as Record<string, unknown>).password).toBe('[REDACTED]');
+             expect((loggedProps as Record<string, unknown>).action).toBe(properties.action);
           }
         }
       )

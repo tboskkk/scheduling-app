@@ -108,7 +108,10 @@ function ScheduleCell({ employee, dayIndex, dayDate, shifts, onOpenQuickAdd, ren
 // Memoize ScheduleCell to prevent unnecessary re-renders
 const MemoizedScheduleCell = React.memo(ScheduleCell)
 
-function SortableEmployeeRow({ employee, children }: { employee: GridEmployee; children: (props: { attributes: any; listeners: any; isDragging: boolean }) => React.ReactNode }) {
+type SortableRowApi = ReturnType<typeof useSortable>
+type DragHandleProps = { attributes: SortableRowApi['attributes']; listeners: SortableRowApi['listeners']; isDragging: boolean }
+
+function SortableEmployeeRow({ employee, children }: { employee: GridEmployee; children: (props: DragHandleProps) => React.ReactNode }) {
   const {
     attributes,
     listeners,
@@ -1074,7 +1077,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
     setQuickAddTarget({ employee, day })
   }, [])
 
-  const renderRow = (employee: GridEmployee | null, dragProps?: { attributes: any; listeners: any; isDragging: boolean }) => {
+  const renderRow = (employee: GridEmployee | null, dragProps?: DragHandleProps) => {
     const key = employee ? employee.id : 'unassigned'
     const weeklyTotal = weeklyHours.get(key) ?? 0
     const { attributes, listeners, isDragging } = dragProps || {}
