@@ -202,6 +202,20 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
     return new Date(toZonedISOString(start, '00:00', timezone))
   }, [weekStartIso, timezone])
 
+  const days = useMemo(() => {
+    return Array.from({ length: 7 }, (_, idx) => {
+      const date = new Date(weekStartDate)
+      date.setDate(weekStartDate.getDate() + idx)
+      const label = date.toLocaleDateString(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        timeZone: timezone || undefined,
+      })
+      return { index: idx, date, label }
+    })
+  }, [weekStartDate, timezone])
+
   const weekEndIso = useMemo(() => {
     const end = new Date(weekStartDate)
     end.setDate(weekStartDate.getDate() + 7)
@@ -564,9 +578,16 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
 
   // Scroll to + flash a highlighted shift when the ?highlight= URL param is set.
   const highlightParam = searchParams.get('highlight')
+  // The flash is started while rendering (once per param value) rather than from an effect.
+  const [handledHighlight, setHandledHighlight] = useState<string | null>(null)
+  if (highlightParam && shifts.length && handledHighlight !== highlightParam) {
+    setHandledHighlight(highlightParam)
+    setFlashShiftId(highlightParam)
+  } else if (!highlightParam && handledHighlight) {
+    setHandledHighlight(null)
+  }
   useEffect(() => {
     if (!highlightParam || !shifts.length) return
-    setFlashShiftId(highlightParam)
     const timer = setTimeout(() => {
       const el = document.querySelector(`[data-shift-id="${highlightParam}"]`)
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -579,11 +600,18 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
   // Open QuickAddShift when the ?fixDate=ISO&fixEmployee=UUID params are set (navigated from AppLayout modal).
   const fixDateParam = searchParams.get('fixDate')
   const fixEmployeeParam = searchParams.get('fixEmployee')
+  // The dialog target is set while rendering (once per param pair); the effect only clears the params.
+  const fixKey = fixDateParam ? `${fixDateParam}|${fixEmployeeParam ?? ''}` : null
+  const [handledFixKey, setHandledFixKey] = useState<string | null>(null)
+  if (fixDateParam && employees.length && handledFixKey !== fixKey) {
+    setHandledFixKey(fixKey)
+    const emp = fixEmployeeParam ? (employees.find(e => e.id === fixEmployeeParam) ?? null) : null
+    setQuickAddTarget({ employee: emp, day: new Date(fixDateParam) })
+  } else if (!fixDateParam && handledFixKey) {
+    setHandledFixKey(null)
+  }
   useEffect(() => {
     if (!fixDateParam || !employees.length) return
-    const emp = fixEmployeeParam ? (employees.find(e => e.id === fixEmployeeParam) ?? null) : null
-    const day = new Date(fixDateParam)
-    setQuickAddTarget({ employee: emp, day })
     setSearchParams((prev) => { prev.delete('fixDate'); prev.delete('fixEmployee'); return prev }, { replace: true })
   }, [fixDateParam, fixEmployeeParam, employees, setSearchParams])
 
@@ -627,20 +655,6 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
       supabase.removeChannel(channel)
     }
   }, [locationId, organizationId, queryClient, weekStartIso, timezone])
-
-  const days = useMemo(() => {
-    return Array.from({ length: 7 }, (_, idx) => {
-      const date = new Date(weekStartDate)
-      date.setDate(weekStartDate.getDate() + idx)
-      const label = date.toLocaleDateString(undefined, {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-        timeZone: timezone || undefined,
-      })
-      return { index: idx, date, label }
-    })
-  }, [weekStartDate, timezone])
 
   const dayFormatter = useMemo(
     () =>
@@ -791,7 +805,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
     return data as ShiftRecord
   }
 
-  const moveShiftToTarget = (shift: ShiftRecord, targetEmployeeId: string | null, dayIndex: number) => {
+  const moveShiftToTarget = useCallback((shift: ShiftRecord, targetEmployeeId: string | null, dayIndex: number) => {
     const startLabel = localTimeLabel(shift.start_datetime, timezone)
     const endLabel = localTimeLabel(shift.end_datetime, timezone)
     const targetDate = new Date(weekStartDate)
@@ -807,7 +821,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
     }
 
     return { ...shift, employee_id: targetEmployeeId, start_datetime: startIso, end_datetime: endIso }
-  }
+  }, [weekStartDate, timezone])
 
   const handleDragStart = () => {
     // No-op for now
@@ -866,7 +880,7 @@ function ScheduleGrid({ organizationId, locationId }: ScheduleGridProps) {
         isValid: !hasHardBlock,
       })
     }, 100) // 100ms debounce
-  }, [safeShifts, employees, availabilityQuery.data, unavailabilityQuery.data, coverageQuery.data, timezone, weekStartDate])
+  }, [safeShifts, employees, availabilityQuery.data, unavailabilityQuery.data, coverageQuery.data, timezone, weekStartDate, moveShiftToTarget])
 
   // Cleanup timeout on unmount
   useEffect(() => {
