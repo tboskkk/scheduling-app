@@ -278,7 +278,7 @@ function EditShiftDialog({ isOpen, onClose, shift, timezone, employees, roles, o
             <select
               value={employeeId ?? ''}
               onChange={(e) => setEmployeeId(e.target.value || null)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
             >
               <option value="">Unassigned</option>
               {employees.map((emp) => (
@@ -294,7 +294,7 @@ function EditShiftDialog({ isOpen, onClose, shift, timezone, employees, roles, o
             <select
               value={roleId}
               onChange={(e) => setRoleId(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
             >
               <option value="">No role</option>
               {roles.map((role) => (
@@ -313,7 +313,7 @@ function EditShiftDialog({ isOpen, onClose, shift, timezone, employees, roles, o
                 step="900"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
               />
             </label>
             <label className="space-y-1">
@@ -323,7 +323,7 @@ function EditShiftDialog({ isOpen, onClose, shift, timezone, employees, roles, o
                 step="900"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
               />
             </label>
           </div>
@@ -333,7 +333,7 @@ function EditShiftDialog({ isOpen, onClose, shift, timezone, employees, roles, o
               <span className="text-xs uppercase tracking-[0.12em] text-slate-500">Unpaid Break</span>
               <label className="relative inline-flex cursor-pointer items-center">
                 <input type="checkbox" checked={hasBreak} onChange={(e) => handleToggleBreak(e.target.checked)} className="peer sr-only" />
-                <div className="peer h-5 w-9 rounded-full bg-slate-700 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500/50"></div>
+                <div className="peer h-5 w-9 rounded-full bg-slate-700 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-focus:outline-hidden peer-focus:ring-2 peer-focus:ring-blue-500/50"></div>
               </label>
             </div>
             
@@ -345,7 +345,7 @@ function EditShiftDialog({ isOpen, onClose, shift, timezone, employees, roles, o
                     type="time"
                     value={breakStartTime}
                     onChange={(e) => setBreakStartTime(e.target.value)}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
                   />
                 </label>
                 <label className="space-y-1">
@@ -354,7 +354,7 @@ function EditShiftDialog({ isOpen, onClose, shift, timezone, employees, roles, o
                     type="time"
                     value={breakEndTime}
                     onChange={(e) => setBreakEndTime(e.target.value)}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
                   />
                 </label>
               </div>

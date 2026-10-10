@@ -84,10 +84,10 @@ function ShiftCard({ shift, role, timezone, isSelected, isSelectionMode, isHighl
       onClick={handleClick}
       title={tooltipText}
       data-shift-id={shift.id}
-      className={`group relative w-full cursor-grab rounded-lg border bg-slate-900/85 px-3 py-2 text-[12px] text-slate-100 shadow-sm shadow-black/30 transition ${borderClass} ${cardActiveClass} ${isHighlighted ? 'animate-pulse' : ''} ${isSelectionMode ? 'cursor-pointer' : ''}`}
+      className={`group relative w-full cursor-grab rounded-lg border bg-slate-900/85 px-3 py-2 text-[12px] text-slate-100 shadow-xs shadow-black/30 transition ${borderClass} ${cardActiveClass} ${isHighlighted ? 'animate-pulse' : ''} ${isSelectionMode ? 'cursor-pointer' : ''}`}
     >
       {(hasHardBlock || hasSoftWarning) && (
-        <div className="absolute -right-1.5 -top-1.5 z-30 flex h-4 w-4 items-center justify-center rounded-full bg-slate-900 shadow-sm ring-1 ring-slate-950">
+        <div className="absolute -right-1.5 -top-1.5 z-30 flex h-4 w-4 items-center justify-center rounded-full bg-slate-900 shadow-xs ring-1 ring-slate-950">
           <span className="text-[10px] leading-none">{hasHardBlock ? '🔴' : '⚠️'}</span>
         </div>
       )}

@@ -132,7 +132,7 @@ function ShiftTradeRequestForm({ employeeProfile, onSaved, onCancel }: Props) {
           value={myShiftId}
           onChange={(e) => setMyShiftId(e.target.value)}
           required
-          className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-blue-500"
+          className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-blue-500"
         >
           <option value="">Select a shift…</option>
           {myShifts.map(s => (
@@ -150,7 +150,7 @@ function ShiftTradeRequestForm({ employeeProfile, onSaved, onCancel }: Props) {
           value={targetEmployeeId}
           onChange={(e) => { setTargetEmployeeId(e.target.value); setTheirShiftId('') }}
           required
-          className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-blue-500"
+          className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-blue-500"
         >
           <option value="">Select a colleague…</option>
           {colleagues.map(c => (
@@ -167,7 +167,7 @@ function ShiftTradeRequestForm({ employeeProfile, onSaved, onCancel }: Props) {
           <select
             value={theirShiftId}
             onChange={(e) => setTheirShiftId(e.target.value)}
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-blue-500"
+            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-blue-500"
           >
             <option value="">No swap — just give away my shift</option>
             {theirShifts.map(s => (
@@ -184,7 +184,7 @@ function ShiftTradeRequestForm({ employeeProfile, onSaved, onCancel }: Props) {
           onChange={(e) => setNote(e.target.value)}
           rows={2}
           placeholder="Any context for your colleague…"
-          className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-blue-500 resize-none"
+          className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-blue-500 resize-none"
         />
       </label>
 

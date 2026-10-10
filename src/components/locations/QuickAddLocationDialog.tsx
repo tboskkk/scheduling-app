@@ -327,7 +327,7 @@ function QuickAddLocationDialog({ isOpen, onClose, organizationId, onCreated }: 
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Downtown Flagship"
                 required
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
               />
             </label>
 
@@ -338,7 +338,7 @@ function QuickAddLocationDialog({ isOpen, onClose, organizationId, onCreated }: 
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="123 Market Street, San Francisco, CA"
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
               />
             </label>
 
@@ -362,7 +362,7 @@ function QuickAddLocationDialog({ isOpen, onClose, organizationId, onCreated }: 
                 value={timezoneQuery}
                 onChange={(e) => setTimezoneQuery(e.target.value)}
                 placeholder="Search (e.g., Regina, London, Tokyo)"
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
               />
 
               <select
@@ -370,7 +370,7 @@ function QuickAddLocationDialog({ isOpen, onClose, organizationId, onCreated }: 
                 onChange={(e) => setTimezone(e.target.value)}
                 required
                 size={Math.min(12, Math.max(6, (showAllZones ? filteredTimezones : suggestedTimezones).length + 2))}
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
               >
                 <optgroup label="Suggested (region-aware)">
                   {suggestedTimezones.map((zone) => (
@@ -425,7 +425,7 @@ function QuickAddLocationDialog({ isOpen, onClose, organizationId, onCreated }: 
                   <select
                     value={selectedRole}
                     onChange={(e) => setSelectedRole(e.target.value)}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
                   >
                     <option value="">Select role...</option>
                     {roles.map((role) => (
@@ -442,7 +442,7 @@ function QuickAddLocationDialog({ isOpen, onClose, organizationId, onCreated }: 
                     min="1"
                     value={minEmployees}
                     onChange={(e) => setMinEmployees(parseInt(e.target.value))}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
                   />
                 </label>
               </div>
@@ -466,7 +466,7 @@ function QuickAddLocationDialog({ isOpen, onClose, organizationId, onCreated }: 
                       key={i}
                       type="button"
                       onClick={() => toggleDay(i)}
-                      className={`px-2.5 py-1.5 rounded text-xs font-medium transition-all ${
+                      className={`px-2.5 py-1.5 rounded-sm text-xs font-medium transition-all ${
                         selectedDays.includes(i)
                           ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
                           : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
@@ -485,7 +485,7 @@ function QuickAddLocationDialog({ isOpen, onClose, organizationId, onCreated }: 
                     type="time"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
                   />
                 </label>
                 <label className="space-y-1">
@@ -494,7 +494,7 @@ function QuickAddLocationDialog({ isOpen, onClose, organizationId, onCreated }: 
                     type="time"
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
                   />
                 </label>
               </div>

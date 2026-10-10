@@ -86,7 +86,7 @@ export default function RolesManager() {
   return (
     <div className="space-y-6">
       {error && (
-        <div className="bg-red-500/10 border border-red-500/20 text-red-200 p-3 rounded text-sm">
+        <div className="bg-red-500/10 border border-red-500/20 text-red-200 p-3 rounded-sm text-sm">
           {error}
           <button onClick={() => setError(null)} className="float-right font-bold">&times;</button>
         </div>
@@ -103,7 +103,7 @@ export default function RolesManager() {
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                className="w-full rounded bg-slate-800 border-slate-700 text-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full rounded-sm bg-slate-800 border-slate-700 text-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-hidden"
                 placeholder="e.g. Cashier"
                 required
               />
@@ -116,7 +116,7 @@ export default function RolesManager() {
                   type="color"
                   value={color}
                   onChange={e => setColor(e.target.value)}
-                  className="h-9 w-16 rounded bg-slate-800 border-slate-700 cursor-pointer"
+                  className="h-9 w-16 rounded-sm bg-slate-800 border-slate-700 cursor-pointer"
                 />
                 <span className="text-xs text-slate-500 font-mono">{color}</span>
               </div>
@@ -125,7 +125,7 @@ export default function RolesManager() {
             <button
               type="submit"
               disabled={isAdding}
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded text-sm font-medium transition-colors disabled:opacity-50"
+              className="w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-sm text-sm font-medium transition-colors disabled:opacity-50"
             >
               {isAdding ? 'Adding...' : 'Create Role'}
             </button>
@@ -140,10 +140,10 @@ export default function RolesManager() {
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               {roles.map(role => (
-                <div key={role.id} className="flex items-center justify-between bg-slate-800/50 p-3 rounded border border-slate-700">
+                <div key={role.id} className="flex items-center justify-between bg-slate-800/50 p-3 rounded-sm border border-slate-700">
                   <div className="flex items-center gap-3">
                     <div
-                      className="w-4 h-4 rounded-full shadow-sm"
+                      className="w-4 h-4 rounded-full shadow-xs"
                       style={{ backgroundColor: role.color }}
                     />
                     <span className="text-sm font-medium text-white">{role.name}</span>

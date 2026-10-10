@@ -111,14 +111,14 @@ function AuthPage({ mode = 'login', session, userRole }: AuthPageProps) {
             <button
               type="button"
               onClick={() => setAuthView('login')}
-              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${authView === 'login' ? 'bg-white text-slate-900 shadow' : 'text-slate-200 hover:text-white'}`}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${authView === 'login' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-200 hover:text-white'}`}
             >
               Login
             </button>
             <button
               type="button"
               onClick={() => setAuthView('register')}
-              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${authView === 'register' ? 'bg-white text-slate-900 shadow' : 'text-slate-200 hover:text-white'}`}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${authView === 'register' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-200 hover:text-white'}`}
             >
               Register
             </button>
@@ -146,7 +146,7 @@ function AuthPage({ mode = 'login', session, userRole }: AuthPageProps) {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-hidden ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
                 placeholder="you@example.com"
               />
             </div>
@@ -159,7 +159,7 @@ function AuthPage({ mode = 'login', session, userRole }: AuthPageProps) {
                 minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-hidden ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
                 placeholder="At least 8 characters"
               />
             </div>
@@ -179,7 +179,7 @@ function AuthPage({ mode = 'login', session, userRole }: AuthPageProps) {
             <button
               type="submit"
               disabled={isAuthLoading}
-              className="w-full rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:translate-y-[-1px] hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70"
+              className="w-full rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:-translate-y-px hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isAuthLoading ? 'Working…' : authView === 'login' ? 'Sign in' : 'Create account'}
             </button>

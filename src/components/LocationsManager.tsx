@@ -143,7 +143,7 @@ export function LocationsManager({ organizationId }: Props) {
             <div className="rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-400">No locations yet. Create your first one.</div>
           )}
           {locations?.map((location) => (
-            <div key={location.id} className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-100 shadow-sm shadow-slate-950/40">
+            <div key={location.id} className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-100 shadow-xs shadow-slate-950/40">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-semibold text-white">{location.name}</p>
@@ -177,7 +177,7 @@ export function LocationsManager({ organizationId }: Props) {
 
         <div className="mt-4 overflow-x-auto hidden md:block">
           <div className="min-w-[680px] rounded-lg border border-slate-800 bg-slate-950/60">
-            <div className="grid grid-cols-[2fr_1fr_1fr_auto] gap-3 border-b border-slate-800 px-4 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-slate-400">
+            <div className="grid grid-cols-[2fr_1fr_1fr_auto] gap-3 border-b border-slate-800 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-slate-400">
               <span>Name</span>
               <span>Address</span>
               <span>Timezone</span>

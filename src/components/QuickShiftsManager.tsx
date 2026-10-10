@@ -112,20 +112,20 @@ export default function QuickShiftsManager({ quickShifts, onChange }: QuickShift
                   value={editingShift.label}
                   onChange={(e) => setEditingShift({ ...editingShift, label: e.target.value })}
                   placeholder="Shift name"
-                  className="px-3 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm focus:outline-none focus:border-blue-500"
+                  className="px-3 py-1 bg-slate-700 border border-slate-600 rounded-sm text-white text-sm focus:outline-hidden focus:border-blue-500"
                 />
                 <input
                   type="time"
                   value={editingShift.start}
                   onChange={(e) => setEditingShift({ ...editingShift, start: e.target.value })}
-                  className="px-3 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm focus:outline-none focus:border-blue-500"
+                  className="px-3 py-1 bg-slate-700 border border-slate-600 rounded-sm text-white text-sm focus:outline-hidden focus:border-blue-500"
                 />
                 <span className="text-slate-400">–</span>
                 <input
                   type="time"
                   value={editingShift.end}
                   onChange={(e) => setEditingShift({ ...editingShift, end: e.target.value })}
-                  className="px-3 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm focus:outline-none focus:border-blue-500"
+                  className="px-3 py-1 bg-slate-700 border border-slate-600 rounded-sm text-white text-sm focus:outline-hidden focus:border-blue-500"
                 />
                 <div className="flex gap-2">
                   <button
@@ -190,21 +190,21 @@ export default function QuickShiftsManager({ quickShifts, onChange }: QuickShift
               value={editingShift.label}
               onChange={(e) => setEditingShift({ ...editingShift, label: e.target.value })}
               placeholder="Shift name"
-              className="px-3 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm focus:outline-none focus:border-blue-500"
+              className="px-3 py-1 bg-slate-700 border border-slate-600 rounded-sm text-white text-sm focus:outline-hidden focus:border-blue-500"
               autoFocus
             />
             <input
               type="time"
               value={editingShift.start}
               onChange={(e) => setEditingShift({ ...editingShift, start: e.target.value })}
-              className="px-3 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm focus:outline-none focus:border-blue-500"
+              className="px-3 py-1 bg-slate-700 border border-slate-600 rounded-sm text-white text-sm focus:outline-hidden focus:border-blue-500"
             />
             <span className="text-slate-400">–</span>
             <input
               type="time"
               value={editingShift.end}
               onChange={(e) => setEditingShift({ ...editingShift, end: e.target.value })}
-              className="px-3 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm focus:outline-none focus:border-blue-500"
+              className="px-3 py-1 bg-slate-700 border border-slate-600 rounded-sm text-white text-sm focus:outline-hidden focus:border-blue-500"
             />
             <div className="flex gap-2">
               <button

@@ -59,7 +59,7 @@ function TimeOffRequestForm({ employeeProfile, onSaved, onCancel }: Props) {
               if (endDate < e.target.value) setEndDate(e.target.value)
             }}
             required
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-blue-500"
+            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-blue-500"
           />
         </label>
         <label className="space-y-1">
@@ -70,7 +70,7 @@ function TimeOffRequestForm({ employeeProfile, onSaved, onCancel }: Props) {
             min={startDate}
             onChange={(e) => setEndDate(e.target.value)}
             required
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-blue-500"
+            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-blue-500"
           />
         </label>
       </div>
@@ -82,7 +82,7 @@ function TimeOffRequestForm({ employeeProfile, onSaved, onCancel }: Props) {
           onChange={(e) => setReason(e.target.value)}
           rows={3}
           placeholder="Vacation, personal appointment, etc."
-          className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-blue-500 resize-none"
+          className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-blue-500 resize-none"
         />
       </label>
 

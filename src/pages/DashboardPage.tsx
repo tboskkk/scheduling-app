@@ -263,7 +263,7 @@ function DashboardPage({
               <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Upcoming</p>
               <div className="mt-2 grid grid-cols-2 gap-3 text-sm text-slate-200">
                 <div>
-                  <p className="text-[12px] uppercase tracking-[0.1em] text-slate-500">Today</p>
+                  <p className="text-[12px] uppercase tracking-widest text-slate-500">Today</p>
                   {summary.todayShifts.length === 0 && <p className="text-slate-400">No shifts</p>}
                   {summary.todayShifts.slice(0, 4).map((shift) => (
                     <div key={shift.id} className="mt-1 rounded-md border border-slate-800 bg-slate-950/60 px-2 py-1">
@@ -289,7 +289,7 @@ function DashboardPage({
                   )}
                 </div>
                 <div>
-                  <p className="text-[12px] uppercase tracking-[0.1em] text-slate-500">Tomorrow</p>
+                  <p className="text-[12px] uppercase tracking-widest text-slate-500">Tomorrow</p>
                   {summary.tomorrowShifts.length === 0 && <p className="text-slate-400">No shifts</p>}
                   {summary.tomorrowShifts.slice(0, 4).map((shift) => (
                     <div key={shift.id} className="mt-1 rounded-md border border-slate-800 bg-slate-950/60 px-2 py-1">

@@ -167,7 +167,7 @@ function EmployeesManager({ organizationId, userEmail = null }: Props) {
 
   return (
     <div className="min-w-0 space-y-6">
-      <div className="min-w-0 w-full rounded-xl border border-transparent bg-slate-900/70 px-4 py-5 text-slate-50 shadow-sm shadow-slate-950/30 sm:px-6 sm:py-6 md:border md:border-slate-800 md:px-7 md:py-7">
+      <div className="min-w-0 w-full rounded-xl border border-transparent bg-slate-900/70 px-4 py-5 text-slate-50 shadow-xs shadow-slate-950/30 sm:px-6 sm:py-6 md:border md:border-slate-800 md:px-7 md:py-7">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Employees</p>
@@ -191,7 +191,7 @@ function EmployeesManager({ organizationId, userEmail = null }: Props) {
             <select
               value={locationFilter}
               onChange={(e) => setLocationFilter(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
+              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-hidden ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
             >
               <option value="">All locations</option>
               {locations?.map((loc) => (
@@ -207,7 +207,7 @@ function EmployeesManager({ organizationId, userEmail = null }: Props) {
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
+              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-hidden ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
             >
               <option value="">All roles</option>
               {roles?.map((role) => (
@@ -223,7 +223,7 @@ function EmployeesManager({ organizationId, userEmail = null }: Props) {
               type="checkbox"
               checked={showInactive}
               onChange={(e) => setShowInactive(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-emerald-400"
+              className="h-4 w-4 rounded-sm border-slate-600 bg-slate-900 text-emerald-400"
             />
             Show inactive employees
           </label>
@@ -243,7 +243,7 @@ function EmployeesManager({ organizationId, userEmail = null }: Props) {
           {filteredEmployees.map((employee) => {
             const homeLocation = locations?.find((loc) => loc.id === employee.home_location_id)
             return (
-              <div key={employee.id} className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-100 shadow-sm shadow-slate-950/40">
+              <div key={employee.id} className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-100 shadow-xs shadow-slate-950/40">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-semibold text-white flex items-center gap-2">
@@ -321,7 +321,7 @@ function EmployeesManager({ organizationId, userEmail = null }: Props) {
         <div className="mt-4 overflow-x-auto hidden md:block">
           <div className="min-w-[860px] rounded-lg border border-slate-800 bg-slate-950/60">
             <table className="w-full text-left text-sm text-slate-400">
-              <thead className="border-b border-slate-800 text-xs font-semibold uppercase tracking-[0.1em]">
+              <thead className="border-b border-slate-800 text-xs font-semibold uppercase tracking-widest">
                 <tr>
                   <th className="px-4 py-3 font-semibold text-slate-400 w-[30%]">Name</th>
                   <th className="px-4 py-3 font-semibold text-slate-400 w-[20%]">Contact</th>

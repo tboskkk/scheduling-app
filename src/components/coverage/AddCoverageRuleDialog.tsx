@@ -147,7 +147,7 @@ function AddCoverageRuleDialog({ isOpen, onClose, organizationId, roles, locatio
                 value={roleId}
                 onChange={(e) => setRoleId(e.target.value)}
                 required
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
               >
                 <option value="">Select role...</option>
                 {roles.map((role) => (
@@ -163,7 +163,7 @@ function AddCoverageRuleDialog({ isOpen, onClose, organizationId, roles, locatio
                 value={locationId}
                 onChange={(e) => setLocationId(e.target.value)}
                 required
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
               >
                 <option value="">Select location...</option>
                 {locations.map((location) => (
@@ -194,7 +194,7 @@ function AddCoverageRuleDialog({ isOpen, onClose, organizationId, roles, locatio
                   key={i}
                   type="button"
                   onClick={() => toggleDay(i)}
-                  className={`px-2.5 py-1.5 rounded text-xs font-medium transition-all ${
+                  className={`px-2.5 py-1.5 rounded-sm text-xs font-medium transition-all ${
                     selectedDays.includes(i)
                       ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
                       : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
@@ -214,7 +214,7 @@ function AddCoverageRuleDialog({ isOpen, onClose, organizationId, roles, locatio
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
                 required
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
               />
             </label>
             <label className="space-y-1">
@@ -224,7 +224,7 @@ function AddCoverageRuleDialog({ isOpen, onClose, organizationId, roles, locatio
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
                 required
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
               />
             </label>
             <label className="space-y-1">
@@ -235,7 +235,7 @@ function AddCoverageRuleDialog({ isOpen, onClose, organizationId, roles, locatio
                 value={minEmployees}
                 onChange={(e) => setMinEmployees(parseInt(e.target.value))}
                 required
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
+                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500"
               />
             </label>
           </div>

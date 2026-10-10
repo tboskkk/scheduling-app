@@ -291,7 +291,7 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
                       value={selectedLocationId}
                       onChange={(e) => handleLocationChange(e.target.value)}
                       disabled={areLocationsLoading || !locations?.length}
-                      className="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-2 text-sm text-white outline-none ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500 disabled:opacity-60"
+                      className="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-2 text-sm text-white outline-hidden ring-2 ring-transparent transition focus:border-blue-500 focus:ring-blue-500 disabled:opacity-60"
                     >
                       {!selectedLocationId && <option value="">Select a location</option>}
                       {(locations ?? []).map((loc) => (
@@ -307,7 +307,7 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
           </div>
 
           {!isSidebarCollapsed && (
-            <div className="flex-shrink-0 pt-6">
+            <div className="shrink-0 pt-6">
               <div className="rounded-lg border border-slate-800 bg-slate-900/70 p-3 text-xs text-slate-200">
                 <p className="font-semibold text-white">{session.user.email}</p>
                 <p className="text-slate-400">Signed in</p>
@@ -347,7 +347,7 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
 
         <main className={`flex-1 bg-slate-950/60 transition-all duration-200 ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
           <DemoBanner email={session.user.email ?? null} role="manager" />
-          <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-900/80 backdrop-blur">
+          <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm">
             <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
                 <button
@@ -400,7 +400,7 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
                     value={selectedLocationId}
                     onChange={(e) => handleLocationChange(e.target.value)}
                     disabled={areLocationsLoading || !locations?.length}
-                    className="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-semibold text-white outline-none transition focus:border-blue-500 disabled:opacity-60"
+                    className="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-semibold text-white outline-hidden transition focus:border-blue-500 disabled:opacity-60"
                   >
                     {!selectedLocationId && <option value="">Select location</option>}
                     {(locations ?? []).map((loc) => (

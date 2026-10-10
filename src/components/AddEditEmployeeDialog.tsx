@@ -382,7 +382,7 @@ function AddEditEmployeeDialog({
                   onChange={(e) => setFormState((prev) => ({ ...prev, name: e.target.value }))}
                   placeholder="Taylor Manager"
                   required
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-slate-100 outline-none ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-slate-100 outline-hidden ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
                 />
               </div>
 
@@ -394,7 +394,7 @@ function AddEditEmployeeDialog({
                     value={formState.email}
                     onChange={(e) => setFormState((prev) => ({ ...prev, email: e.target.value }))}
                     placeholder="taylor@example.com"
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-slate-100 outline-none ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
+                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-slate-100 outline-hidden ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
                   />
                 </label>
                 <label className="space-y-2">
@@ -404,7 +404,7 @@ function AddEditEmployeeDialog({
                     value={formState.phone}
                     onChange={(e) => setFormState((prev) => ({ ...prev, phone: e.target.value }))}
                     placeholder="(555) 123-4567"
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-slate-100 outline-none ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
+                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-slate-100 outline-hidden ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
                   />
                 </label>
               </div>
@@ -481,7 +481,7 @@ function AddEditEmployeeDialog({
                     value={formState.hourlyRate}
                     onChange={(e) => setFormState((prev) => ({ ...prev, hourlyRate: e.target.value.replace(/^0+(?=\d)/, '') }))}
                     placeholder="18.50"
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-slate-100 outline-none ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
+                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-slate-100 outline-hidden ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
                   />
                 </label>
 
@@ -490,7 +490,7 @@ function AddEditEmployeeDialog({
                   <select
                     value={formState.homeLocationId}
                     onChange={(e) => setFormState((prev) => ({ ...prev, homeLocationId: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-100 outline-none ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
+                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-100 outline-hidden ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
                   >
                     <option value="">Unassigned</option>
                     {locations?.map((loc) => (
@@ -511,7 +511,7 @@ function AddEditEmployeeDialog({
                         type="checkbox"
                         checked={formState.roleIds.has(role.id)}
                         onChange={() => toggleRole(role.id)}
-                        className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-emerald-400"
+                        className="h-4 w-4 rounded-sm border-slate-600 bg-slate-900 text-emerald-400"
                       />
                       <span 
                         className="rounded-full border border-slate-700 px-2 py-[2px] text-[12px] font-semibold" 
@@ -531,7 +531,7 @@ function AddEditEmployeeDialog({
                     type="checkbox"
                     checked={formState.isFloating}
                     onChange={(e) => setFormState((prev) => ({ ...prev, isFloating: e.target.checked }))}
-                    className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-emerald-400"
+                    className="h-4 w-4 rounded-sm border-slate-600 bg-slate-900 text-emerald-400"
                   />
                   Floating employee (can work any location)
                 </label>
@@ -540,7 +540,7 @@ function AddEditEmployeeDialog({
                     type="checkbox"
                     checked={formState.isActive}
                     onChange={(e) => setFormState((prev) => ({ ...prev, isActive: e.target.checked }))}
-                    className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-emerald-400"
+                    className="h-4 w-4 rounded-sm border-slate-600 bg-slate-900 text-emerald-400"
                   />
                   Active
                 </label>
@@ -556,7 +556,7 @@ function AddEditEmployeeDialog({
                 <button
                   type="submit"
                   disabled={!canSubmit}
-                  className="rounded-lg bg-emerald-400 px-4 py-3 text-sm font-semibold text-emerald-950 transition hover:translate-y-[-1px] hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="rounded-lg bg-emerald-400 px-4 py-3 text-sm font-semibold text-emerald-950 transition hover:-translate-y-px hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {isSaving ? 'Saving…' : isEditing ? 'Save changes' : 'Create employee'}
                 </button>
@@ -648,7 +648,7 @@ function AddEditEmployeeDialog({
                                 : [...availabilityForm.selectedDays, i].sort()
                               setAvailabilityForm(prev => ({ ...prev, selectedDays: newDays }))
                             }}
-                            className={`px-2.5 py-1.5 rounded text-xs font-medium transition-all ${
+                            className={`px-2.5 py-1.5 rounded-sm text-xs font-medium transition-all ${
                               availabilityForm.selectedDays.includes(i)
                                 ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20'
                                 : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
@@ -671,7 +671,7 @@ function AddEditEmployeeDialog({
                           type="time"
                           value={availabilityForm.start}
                           onChange={(e) => setAvailabilityForm((prev) => ({ ...prev, start: e.target.value }))}
-                          className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
+                          className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-hidden ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
                         />
                       </div>
                       <div>
@@ -680,7 +680,7 @@ function AddEditEmployeeDialog({
                           type="time"
                           value={availabilityForm.end}
                           onChange={(e) => setAvailabilityForm((prev) => ({ ...prev, end: e.target.value }))}
-                          className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
+                          className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-hidden ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
                         />
                       </div>
                     </div>
@@ -742,13 +742,13 @@ function AddEditEmployeeDialog({
                       type="datetime-local"
                       value={unavailabilityForm.start}
                       onChange={(e) => setUnavailabilityForm((prev) => ({ ...prev, start: e.target.value }))}
-                      className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
+                      className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-hidden ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
                     />
                     <input
                       type="datetime-local"
                       value={unavailabilityForm.end}
                       onChange={(e) => setUnavailabilityForm((prev) => ({ ...prev, end: e.target.value }))}
-                      className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
+                      className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-hidden ring-2 ring-transparent transition focus:border-slate-500 focus:ring-slate-600"
                     />
                   </div>
 

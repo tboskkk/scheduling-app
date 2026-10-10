@@ -93,7 +93,7 @@ function SettingsPage() {
                   
                   if (val !== '') setLocalSettings(s)
                 }}
-                className="w-full bg-slate-900 border border-slate-600 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-slate-900 border border-slate-600 rounded-md px-3 py-2 text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 defaultValue=""
               >
                 <option value="">-- Select Region --</option>
@@ -123,7 +123,7 @@ function SettingsPage() {
                   </label>
                   <div className="group relative">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500 hover:text-slate-300 cursor-help"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 border border-slate-700 rounded shadow-xl text-xs text-slate-300 hidden group-hover:block z-50 pointer-events-none">
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 border border-slate-700 rounded-sm shadow-xl text-xs text-slate-300 hidden group-hover:block z-50 pointer-events-none">
                       Total hours an employee can work in a week before overtime rates apply.
                     </div>
                   </div>
@@ -134,7 +134,7 @@ function SettingsPage() {
                   onChange={(e) => handleChange('weekly_overtime_threshold', Math.min(168, Math.max(0, Number(e.target.value))))}
                   onBlur={(e) => (e.target.value = Number(e.target.value).toString())}
                   disabled={localSettings.enable_california_rules}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                 />
                 <p className="text-xs text-slate-500 mt-1">
                   Shifts that push the weekly total over this amount will be flagged.
@@ -148,7 +148,7 @@ function SettingsPage() {
                   </label>
                   <div className="group relative">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500 hover:text-slate-300 cursor-help"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 border border-slate-700 rounded shadow-xl text-xs text-slate-300 hidden group-hover:block z-50 pointer-events-none">
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 border border-slate-700 rounded-sm shadow-xl text-xs text-slate-300 hidden group-hover:block z-50 pointer-events-none">
                       Hours an employee can work in a single day before overtime rates apply.
                     </div>
                   </div>
@@ -159,7 +159,7 @@ function SettingsPage() {
                   onChange={(e) => handleChange('daily_overtime_threshold', Math.min(24, Math.max(0, Number(e.target.value))))}
                   onBlur={(e) => (e.target.value = Number(e.target.value).toString())}
                   disabled={localSettings.enable_california_rules}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                 />
                 <p className="text-xs text-slate-500 mt-1">
                   Shifts longer than this duration will be flagged.
@@ -173,7 +173,7 @@ function SettingsPage() {
                   </label>
                   <div className="group relative">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500 hover:text-slate-300 cursor-help"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 border border-slate-700 rounded shadow-xl text-xs text-slate-300 hidden group-hover:block z-50 pointer-events-none">
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 border border-slate-700 rounded-sm shadow-xl text-xs text-slate-300 hidden group-hover:block z-50 pointer-events-none">
                       Minimum required hours of rest between the end of one shift and the start of the next.
                     </div>
                   </div>
@@ -183,7 +183,7 @@ function SettingsPage() {
                   value={localSettings.min_rest_period_hours}
                   onChange={(e) => handleChange('min_rest_period_hours', Math.min(168, Math.max(0, Number(e.target.value))))}
                   onBlur={(e) => (e.target.value = Number(e.target.value).toString())}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 />
                 <p className="text-xs text-slate-500 mt-1">
                   Minimum hours required between the end of one shift and the start of the next.
@@ -199,7 +199,7 @@ function SettingsPage() {
                 <select
                   value={localSettings.week_start_day}
                   onChange={(e) => handleChange('week_start_day', Number(e.target.value))}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 >
                   <option value={0}>Sunday</option>
                   <option value={1}>Monday</option>
@@ -218,7 +218,7 @@ function SettingsPage() {
                 <select
                   value={localSettings.time_format}
                   onChange={(e) => handleChange('time_format', e.target.value as OrganizationSettings['time_format'])}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="12h">12-hour (5:00 PM)</option>
                   <option value="24h">24-hour (17:00)</option>
@@ -232,7 +232,7 @@ function SettingsPage() {
                 <select
                   value={localSettings.currency || 'CAD'}
                   onChange={(e) => handleChange('currency', e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="CAD">CAD ($)</option>
                   <option value="USD">USD ($)</option>
@@ -256,7 +256,7 @@ function SettingsPage() {
                           handleChange('daily_overtime_threshold', 8)
                         }
                       }}
-                      className="w-5 h-5 rounded border-slate-700 bg-slate-800 text-blue-600 focus:ring-blue-500 focus:ring-offset-slate-900"
+                      className="w-5 h-5 rounded-sm border-slate-700 bg-slate-800 text-blue-600 focus:ring-blue-500 focus:ring-offset-slate-900"
                     />
                     <div>
                       <span className="block text-sm font-medium text-white">Enable California Overtime Rules</span>
