@@ -20,7 +20,7 @@ describe('Property 27: Copy Week Schedule Equivalence', () => {
             duration_hours: fc.integer({ min: 1, max: 12 }),
           })
         ),
-        fc.date({ min: new Date('2023-01-01'), max: new Date('2025-12-31') }),
+        fc.date({ min: new Date('2023-01-01'), max: new Date('2025-12-31'), noInvalidDate: true }),
         (shiftSpecs, weekStartBase) => {
           // Align weekStartBase to a Monday 00:00 in timezone for simplicity in test setup
           // But the function should handle any date as long as it's the "start of week"

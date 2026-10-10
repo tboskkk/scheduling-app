@@ -14,8 +14,8 @@ describe('Property 19: Schedule Version Preservation', () => {
                 schedule_id: fc.option(fc.uuid(), { nil: undefined }),
                 employee_id: fc.uuid(),
                 role_id: fc.uuid(),
-                start_datetime: fc.date().map(d => d.toISOString()),
-                end_datetime: fc.date().map(d => d.toISOString())
+                start_datetime: fc.date({ noInvalidDate: true }).map(d => d.toISOString()),
+                end_datetime: fc.date({ noInvalidDate: true }).map(d => d.toISOString())
             }))
         }),
         ({ version, shifts }) => {
