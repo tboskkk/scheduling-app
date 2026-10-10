@@ -4,6 +4,48 @@ import { copyShiftsToNextWeek } from '../src/lib/schedule-utils'
 import { ShiftRecord } from '../src/types'
 import { localTimeLabel } from '../src/components/schedule/time'
 
+// Wall-clock reading of an instant in `tz`, expressed as ms of the same wall time read as UTC.
+function wallAsUtcMs(ms: number, tz: string): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz, hourCycle: 'h23',
+    year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric',
+  }).formatToParts(new Date(ms))
+  const get = (t: string) => Number(parts.find(p => p.type === t)!.value)
+  return Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second'))
+}
+
+function offsetMs(ms: number, tz: string): number {
+  return wallAsUtcMs(ms, tz) - Math.floor(ms / 1000) * 1000
+}
+
+// True when the wall time (dateStr 'YYYY-MM-DD', label 'HH:MM') does not exist in `tz`
+// because of a DST spring-forward gap: neither the offset before nor after the
+// transition maps that wall time back to itself.
+function isInDstGap(dateStr: string, label: string, tz: string): boolean {
+  const [y, mo, d] = dateStr.split('-').map(Number)
+  const [h, mi] = label.split(':').map(Number)
+  const naive = Date.UTC(y, mo - 1, d, h, mi)
+  const day = 24 * 60 * 60 * 1000
+  const before = offsetMs(naive - day, tz)
+  const after = offsetMs(naive + day, tz)
+  return [before, after].every(off => wallAsUtcMs(naive - off, tz) !== naive)
+}
+
+function addHourToLabel(label: string): string {
+  const [h, m] = label.split(':').map(Number)
+  return `${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
+
+function localDateStr(iso: string, tz: string): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(new Date(iso))
+}
+
+// Expected label of a copied time: unchanged, unless the original wall time does not
+// exist on the target date (DST gap), in which case it resolves exactly 1 hour later.
+function expectedCopiedLabel(origLabel: string, newIso: string, tz: string): string {
+  return isInDstGap(localDateStr(newIso, tz), origLabel, tz) ? addHourToLabel(origLabel) : origLabel
+}
+
 describe('Property 27: Copy Week Schedule Equivalence', () => {
   const timezone = 'America/New_York'
 
@@ -60,11 +102,11 @@ describe('Property 27: Copy Week Schedule Equivalence', () => {
             // Check time preservation (local time)
             const origStartLabel = localTimeLabel(original.start_datetime, timezone)
             const newStartLabel = localTimeLabel(newShift.start_datetime, timezone)
-            expect(newStartLabel).toBe(origStartLabel)
+            expect(newStartLabel).toBe(expectedCopiedLabel(origStartLabel, newShift.start_datetime, timezone))
 
             const origEndLabel = localTimeLabel(original.end_datetime, timezone)
             const newEndLabel = localTimeLabel(newShift.end_datetime, timezone)
-            expect(newEndLabel).toBe(origEndLabel)
+            expect(newEndLabel).toBe(expectedCopiedLabel(origEndLabel, newShift.end_datetime, timezone))
 
             // Check day of week preservation
             const origDay = new Date(original.start_datetime).toLocaleDateString('en-US', { weekday: 'short', timeZone: timezone })
