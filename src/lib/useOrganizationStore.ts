@@ -41,8 +41,8 @@ export const useOrganizationStore = create<OrganizationStore>((set, get) => ({
       const settings = { ...DEFAULT_ORGANIZATION_SETTINGS, ...orgData.settings }
       
       set({ organization: { ...orgData, settings } })
-    } catch (error: any) {
-      set({ error: error.message })
+    } catch (error) {
+      set({ error: (error as Error).message })
     } finally {
       set({ isLoading: false })
     }
@@ -61,8 +61,8 @@ export const useOrganizationStore = create<OrganizationStore>((set, get) => ({
       if (error) throw error
 
       set({ organization: { ...organization, settings } })
-    } catch (error: any) {
-      set({ error: error.message })
+    } catch (error) {
+      set({ error: (error as Error).message })
     } finally {
       set({ isLoading: false })
     }

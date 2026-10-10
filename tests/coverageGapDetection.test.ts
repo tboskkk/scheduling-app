@@ -3,7 +3,7 @@ import { validateSchedule, ConflictSeverity } from '../src/lib/rules-engine'
 import type { ShiftRecord, GridEmployee, CoverageRequirement } from '../src/types'
 
 describe('Property 14: Coverage Gap Detection', () => {
-  const weekStart = new Date('2024-01-01T00:00:00Z') // Monday
+  // weekStart: 2024-01-01 (Monday)
   const employees: GridEmployee[] = [
     { id: 'emp1', name: 'Alice', is_floating: false, home_location_id: 'loc1' },
     { id: 'emp2', name: 'Bob', is_floating: false, home_location_id: 'loc1' }
@@ -53,7 +53,7 @@ describe('Property 14: Coverage Gap Detection', () => {
     expect(errors).toHaveLength(1)
     expect(errors[0].ruleType).toBe('COVERAGE_GAP')
     expect(errors[0].severity).toBe(ConflictSeverity.SOFT_WARNING)
-    expect(errors[0].meta.missingCount).toBe(1)
+    expect(errors[0].meta?.missingCount).toBe(1)
   })
 
   it('detects partial coverage gaps', () => {
@@ -89,7 +89,7 @@ describe('Property 14: Coverage Gap Detection', () => {
     // Should have error because we need 2, have 1
     expect(errors.length).toBeGreaterThan(0)
     expect(errors[0].ruleType).toBe('COVERAGE_GAP')
-    expect(errors[0].meta.missingCount).toBe(1)
+    expect(errors[0].meta?.missingCount).toBe(1)
   })
 
   it('detects gaps when shift covers only part of the requirement', () => {
@@ -126,8 +126,8 @@ describe('Property 14: Coverage Gap Detection', () => {
     const gapError = errors.find(e => e.ruleType === 'COVERAGE_GAP')
     expect(gapError).toBeDefined()
     // The gap is from 12:00 to 17:00
-    expect(gapError?.meta.startTime).toBe('2024-01-01T12:00:00.000Z')
-    expect(gapError?.meta.endTime).toBe('2024-01-01T17:00:00.000Z')
+    expect(gapError?.meta?.startTime).toBe('2024-01-01T12:00:00.000Z')
+    expect(gapError?.meta?.endTime).toBe('2024-01-01T17:00:00.000Z')
   })
 
   it('treats coverage as location-specific even when other locations are staffed', () => {

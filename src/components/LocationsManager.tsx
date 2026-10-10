@@ -56,15 +56,15 @@ export function LocationsManager({ organizationId }: Props) {
     },
   })
 
-  const handleLocationCreated = async (_location: LocationRecord) => {
+  const handleLocationCreated = async () => {
     await queryClient.invalidateQueries({ queryKey: ['locations', organizationId] })
   }
 
-  const handleLocationUpdated = async (_location: LocationRecord) => {
+  const handleLocationUpdated = async () => {
     await queryClient.invalidateQueries({ queryKey: ['locations', organizationId] })
   }
 
-  const handleLocationDeleted = async (_locationId: string) => {
+  const handleLocationDeleted = async () => {
     await queryClient.invalidateQueries({ queryKey: ['locations', organizationId] })
   }
 

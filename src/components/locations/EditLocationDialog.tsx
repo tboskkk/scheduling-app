@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, type FormEvent } from 'react'
+import { useCallback, useEffect, useState, useMemo, type FormEvent } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 
 // Comprehensive IANA timezone list with fallback
@@ -116,7 +116,7 @@ function EditLocationDialog({ isOpen, onClose, location, onUpdated, onDeleted }:
   const browserTimezone = useMemo(() => {
     try {
       return Intl.DateTimeFormat().resolvedOptions().timeZone
-    } catch (error) {
+    } catch {
       return null
     }
   }, [])
@@ -139,20 +139,6 @@ function EditLocationDialog({ isOpen, onClose, location, onUpdated, onDeleted }:
     return TIMEZONES.filter((zone) => zone.toLowerCase().includes(needle))
   }, [timezoneQuery])
 
-  useEffect(() => {
-    if (!isOpen || !location) return
-    setError(null)
-    setTab('details')
-    setName(location.name)
-    setAddress(location.address || '')
-    setTimezone(location.timezone)
-    setTimezoneQuery('')
-    setShowAllZones(false)
-    
-    fetchRoles()
-    fetchCoverageRules()
-  }, [isOpen, location])
-
   const fetchRoles = async () => {
     try {
       const { data, error } = await supabase
@@ -168,7 +154,7 @@ function EditLocationDialog({ isOpen, onClose, location, onUpdated, onDeleted }:
     }
   }
 
-  const fetchCoverageRules = async () => {
+  const fetchCoverageRules = useCallback(async () => {
     if (!location) return
     
     try {
@@ -184,7 +170,21 @@ function EditLocationDialog({ isOpen, onClose, location, onUpdated, onDeleted }:
     } catch (err) {
       console.error('Failed to fetch coverage rules:', err)
     }
-  }
+  }, [location])
+
+  useEffect(() => {
+    if (!isOpen || !location) return
+    setError(null)
+    setTab('details')
+    setName(location.name)
+    setAddress(location.address || '')
+    setTimezone(location.timezone)
+    setTimezoneQuery('')
+    setShowAllZones(false)
+    
+    fetchRoles()
+    fetchCoverageRules()
+  }, [isOpen, location, fetchCoverageRules])
 
   if (!isOpen || !location) return null
 

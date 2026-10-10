@@ -257,8 +257,8 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
 
       onComplete(orgId as string)
 
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err) {
+      setError((err as Error).message)
       setIsSubmitting(false)
     }
   }

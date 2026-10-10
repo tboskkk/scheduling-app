@@ -16,10 +16,10 @@ describe('Secure Transport', () => {
         }),
         (mockEnv) => {
           if (mockEnv.supabaseUrl && !mockEnv.supabaseUrl.startsWith('https://')) {
-            expect(() => validateEnv(mockEnv as any)).toThrow(/Supabase URL must use HTTPS/);
+            expect(() => validateEnv(mockEnv as never)).toThrow(/Supabase URL must use HTTPS/);
           } else if (mockEnv.supabaseUrl && mockEnv.supabaseKey) {
             // If it starts with https:// and has key, it should pass (or fail for other reasons if I added more checks)
-            expect(() => validateEnv(mockEnv as any)).not.toThrow();
+            expect(() => validateEnv(mockEnv as never)).not.toThrow();
           }
         }
       )

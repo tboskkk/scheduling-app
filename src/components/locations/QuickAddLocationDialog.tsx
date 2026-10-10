@@ -77,7 +77,7 @@ type QuickAddLocationDialogProps = {
   isOpen: boolean
   onClose: () => void
   organizationId: string
-  onCreated: (location: any) => void
+  onCreated: (location: unknown) => void
 }
 
 function QuickAddLocationDialog({ isOpen, onClose, organizationId, onCreated }: QuickAddLocationDialogProps) {
@@ -106,7 +106,7 @@ function QuickAddLocationDialog({ isOpen, onClose, organizationId, onCreated }: 
   const browserTimezone = useMemo(() => {
     try {
       return Intl.DateTimeFormat().resolvedOptions().timeZone
-    } catch (error) {
+    } catch {
       return null
     }
   }, [])

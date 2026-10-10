@@ -1,5 +1,5 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import SettingsPage from '../src/pages/SettingsPage';
 import { useOrganizationStore } from '../src/lib/useOrganizationStore';
 
@@ -32,7 +32,7 @@ describe('Privacy Properties', () => {
       enable_california_rules: false,
     };
 
-    (useOrganizationStore as any).mockReturnValue({
+    (useOrganizationStore as unknown as Mock).mockReturnValue({
       organization: { settings: mockSettings },
       fetchOrganization: vi.fn(),
       updateSettings: vi.fn(),
@@ -47,7 +47,7 @@ describe('Privacy Properties', () => {
 
     expect(global.URL.createObjectURL).toHaveBeenCalled();
     // We verify that the blob was created with the correct data
-    const blob = (global.URL.createObjectURL as any).mock.calls[0][0];
+    const blob = (global.URL.createObjectURL as unknown as Mock).mock.calls[0][0];
     expect(blob).toBeInstanceOf(Blob);
     
     // Use FileReader to read blob content as text() might not be available in jsdom environment
@@ -65,7 +65,7 @@ describe('Privacy Properties', () => {
   // Property 18: Data Cleanup
   // Validates: Requirements 8.3
   it('Property 18: Data Cleanup - Users can request account deletion', () => {
-    (useOrganizationStore as any).mockReturnValue({
+    (useOrganizationStore as unknown as Mock).mockReturnValue({
       organization: { settings: {} },
       fetchOrganization: vi.fn(),
       updateSettings: vi.fn(),

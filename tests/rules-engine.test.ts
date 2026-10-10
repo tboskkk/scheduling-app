@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import * as fc from 'fast-check'
 import { validateSchedule, ConflictSeverity } from '../src/lib/rules-engine'
-import { ShiftRecord, GridEmployee, EmployeeAvailability, EmployeeUnavailability } from '../src/types'
+import { ShiftRecord, EmployeeAvailability, EmployeeUnavailability } from '../src/types'
 
 // Generators
 const minTime = new Date(Date.UTC(2024, 0, 1)).getTime()

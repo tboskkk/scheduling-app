@@ -99,7 +99,8 @@ describe.skipIf(!hasIntegrationCreds)('Organization Settings', () => {
       week_start_day: 1, // Monday
       enable_california_rules: true,
       time_format: '24h',
-      currency: 'CAD'
+      currency: 'CAD',
+      quick_shifts: [],
     }
 
     const { error: updateError } = await manager.client

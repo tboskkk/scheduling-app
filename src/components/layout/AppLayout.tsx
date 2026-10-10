@@ -54,17 +54,17 @@ function AppLayout({ session, managerProfile, onSignOut, isManagerLoading }: App
     enabled: Boolean(managerProfile?.organization_id),
   })
 
-  useEffect(() => {
-    const scheduleMatch = location.pathname.match(/\/schedule\/([^/]+)/)
-    if (scheduleMatch?.[1]) {
-      setSelectedLocationId(decodeURIComponent(scheduleMatch[1]))
-      return
+  // Keep the selected location in sync with the URL (or default to the first location).
+  // Adjusting state during render avoids an extra effect-driven render pass.
+  const scheduleMatch = location.pathname.match(/\/schedule\/([^/]+)/)
+  if (scheduleMatch?.[1]) {
+    const urlLocationId = decodeURIComponent(scheduleMatch[1])
+    if (selectedLocationId !== urlLocationId) {
+      setSelectedLocationId(urlLocationId)
     }
-
-    if (!selectedLocationId && locations?.length) {
-      setSelectedLocationId(locations[0].id)
-    }
-  }, [location.pathname, locations, selectedLocationId])
+  } else if (!selectedLocationId && locations?.length) {
+    setSelectedLocationId(locations[0].id)
+  }
 
   useEffect(() => {
     if (!isManagerLoading && !managerProfile && location.pathname !== '/dashboard') {

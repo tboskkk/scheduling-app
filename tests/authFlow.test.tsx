@@ -13,7 +13,7 @@ describe('Authentication Flow Security', () => {
           <MemoryRouter initialEntries={['/protected']}>
             <Routes>
               <Route path="/login" element={<div>Login Page</div>} />
-              <Route element={<ProtectedRoute session={session as any} allowedRole="manager" userRole={session ? 'manager' : null} />}>
+              <Route element={<ProtectedRoute session={session as never} allowedRole="manager" userRole={session ? 'manager' : null} />}>
                 <Route path="/protected" element={<div>Protected Content</div>} />
               </Route>
             </Routes>

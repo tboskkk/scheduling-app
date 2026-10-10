@@ -6,20 +6,23 @@ import type { OrganizationSettings } from '../types'
 
 function SettingsPage() {
   const { organization, fetchOrganization, updateSettings, isLoading, error } = useOrganizationStore()
-  const [localSettings, setLocalSettings] = useState<OrganizationSettings | null>(null)
+  const [localSettings, setLocalSettings] = useState<OrganizationSettings | null>(organization?.settings ?? null)
+  const [syncedOrganization, setSyncedOrganization] = useState(organization)
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     fetchOrganization()
   }, [fetchOrganization])
 
-  useEffect(() => {
+  // Reset the local edits whenever the stored organization changes (adjusting state during render)
+  if (organization !== syncedOrganization) {
+    setSyncedOrganization(organization)
     if (organization) {
       setLocalSettings(organization.settings)
     }
-  }, [organization])
+  }
 
-  const handleChange = (key: keyof OrganizationSettings, value: any) => {
+  const handleChange = <K extends keyof OrganizationSettings>(key: K, value: OrganizationSettings[K]) => {
     if (!localSettings) return
     setLocalSettings({ ...localSettings, [key]: value })
   }

@@ -20,26 +20,26 @@ export default function RolesManager() {
   const [isAdding, setIsAdding] = useState(false)
 
   useEffect(() => {
-    if (organization) {
-      fetchRoles()
+    if (!organization) return
+
+    // `loading` starts true, so it is not reset here (setState must not run synchronously in an effect)
+    async function fetchRoles() {
+      const { data, error } = await supabase
+        .from('roles')
+        .select('id, name, color')
+        .eq('organization_id', organization?.id)
+        .order('name')
+
+      if (error) {
+        setError(error.message)
+      } else {
+        setRoles(data || [])
+      }
+      setLoading(false)
     }
+
+    fetchRoles()
   }, [organization])
-
-  async function fetchRoles() {
-    setLoading(true)
-    const { data, error } = await supabase
-      .from('roles')
-      .select('id, name, color')
-      .eq('organization_id', organization?.id)
-      .order('name')
-
-    if (error) {
-      setError(error.message)
-    } else {
-      setRoles(data || [])
-    }
-    setLoading(false)
-  }
 
   async function handleAddRole(e: React.FormEvent) {
     e.preventDefault()

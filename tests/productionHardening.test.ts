@@ -10,7 +10,6 @@ describe('Production Hardening', () => {
   });
 
   it('should enforce rate limiting', () => {
-    const key = 'test_limit';
     const limit = 5;
     const windowMs = 60000;
 

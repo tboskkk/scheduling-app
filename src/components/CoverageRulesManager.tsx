@@ -13,6 +13,17 @@ type Role = {
   color: string
 }
 
+async function fetchRules(locationId: string) {
+  const { data } = await supabase
+    .from('coverage_requirements')
+    .select('*')
+    .eq('location_id', locationId)
+    .order('day_of_week')
+    .order('start_time')
+
+  return data
+}
+
 export default function CoverageRulesManager() {
   const [locations, setLocations] = useState<Location[]>([])
   const [roles, setRoles] = useState<Role[]>([])
@@ -28,43 +39,33 @@ export default function CoverageRulesManager() {
   const [minEmployees, setMinEmployees] = useState(1)
 
   useEffect(() => {
+    async function fetchLocationsAndRoles() {
+      const [locsRes, rolesRes] = await Promise.all([
+        supabase.from('locations').select('id, name').order('name'),
+        supabase.from('roles').select('id, name, color').order('name')
+      ])
+
+      if (locsRes.data) {
+        setLocations(locsRes.data)
+        if (locsRes.data.length > 0) {
+          setSelectedLocationId(locsRes.data[0].id)
+        }
+      }
+      if (rolesRes.data) setRoles(rolesRes.data)
+      setLoading(false)
+    }
+
     fetchLocationsAndRoles()
   }, [])
 
   useEffect(() => {
+    // selectedLocationId starts empty (rules are already empty) and is only ever set to a real location id
     if (selectedLocationId) {
-      fetchRules(selectedLocationId)
-    } else {
-      setRules([])
+      fetchRules(selectedLocationId).then((data) => {
+        if (data) setRules(data)
+      })
     }
   }, [selectedLocationId])
-
-  async function fetchLocationsAndRoles() {
-    const [locsRes, rolesRes] = await Promise.all([
-      supabase.from('locations').select('id, name').order('name'),
-      supabase.from('roles').select('id, name, color').order('name')
-    ])
-
-    if (locsRes.data) {
-      setLocations(locsRes.data)
-      if (locsRes.data.length > 0) {
-        setSelectedLocationId(locsRes.data[0].id)
-      }
-    }
-    if (rolesRes.data) setRoles(rolesRes.data)
-    setLoading(false)
-  }
-
-  async function fetchRules(locationId: string) {
-    const { data } = await supabase
-      .from('coverage_requirements')
-      .select('*')
-      .eq('location_id', locationId)
-      .order('day_of_week')
-      .order('start_time')
-
-    if (data) setRules(data)
-  }
 
   async function handleAddRule(e: React.FormEvent) {
     e.preventDefault()
@@ -82,7 +83,8 @@ export default function CoverageRulesManager() {
     const { error } = await supabase.from('coverage_requirements').insert(newRules)
 
     if (!error) {
-      fetchRules(selectedLocationId)
+      const data = await fetchRules(selectedLocationId)
+      if (data) setRules(data)
     }
   }
 
